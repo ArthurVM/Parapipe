@@ -6,6 +6,7 @@ nextflow.enable.dsl=2
 // import modules
 include {printHelp} from './modules/help.nf'
 include {prepRef} from './workflows/prepref.nf'
+include {preprocessing} from './workflows/preprocessing.nf'
 
 params.help = ""
 
@@ -60,4 +61,6 @@ workflow {
 
   main:
     prepRef(params.genome)
+    preprocessing(input_files)
+
 }

@@ -1,5 +1,27 @@
 // modules for mapping and processing fastq files
 
+process fastQC {
+
+    tag { sample_name }
+
+    publishDir "${params.output_dir}/$sample_name/fastQC_reports", mode: 'copy'
+
+    memory '5 GB'
+
+    input:
+    tuple val(sample_name), path(fq1), path(fq2)
+
+    output:
+    path("*", emit: fastQC_all)
+
+    script:
+    """
+    cat $fq1 $fq2 > ${sample_name}.fq.gz
+    fastqc ${sample_name}.fq.gz
+    rm ${sample_name}.fq.gz
+    """
+}
+
 process checkFqValidity {
     /**
     * @QCcheckpoint confirm that fqtools validates both fastqs
