@@ -1,0 +1,4 @@
+./work/
+./singularity/singularity.sif
+./test/
+./.nextflow*
