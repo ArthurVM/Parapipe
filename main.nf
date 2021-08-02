@@ -61,6 +61,7 @@ workflow {
 
   main:
     prepRef(params.genome)
-    preprocessing(input_files)
+
+    preprocessing(input_files, "${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome}")
 
 }

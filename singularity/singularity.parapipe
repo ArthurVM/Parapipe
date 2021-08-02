@@ -73,4 +73,11 @@ curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}
 && cd .. \
 && rm -r fqtools-${fqtools_version}
 
+%environment
 export PICARD_JAR=/usr/local/bin/picard.jar
+export htslib_version=1.12
+export LD_LIBRARY_PATH=/usr/local/lib
+%runscript
+exec /bin/bash "$@"
+%startscript
+exec /bin/bash "$@"
