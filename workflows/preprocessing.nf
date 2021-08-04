@@ -17,8 +17,8 @@ workflow preprocessing {
 
     main:
       checkFqValidity(input_files)
-      // fastQC(input_files)
-      // trimGalore(input_files)
-      mapBT2(input_files, ref_bt2index)
+      fastQC(input_files)
+      trimGalore(input_files)
+      mapBT2(input_files, trimGalore.out.tg_fqs, ref_bt2index)
       deduplication(input_files, mapBT2.out.bam)
 }

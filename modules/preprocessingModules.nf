@@ -31,7 +31,7 @@ process checkFqValidity {
   error_log  = "${sample_name}.err"
 
   """
-  printf ${params.checkFqValidity_isok}
+  printf OK
   touch ${error_log}
   """
 }
@@ -121,6 +121,7 @@ process mapBT2 {
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
+  tuple path(trimmed_fq1), path(trimmed_fq2)
   path(ref_bt2index)
 
   output:

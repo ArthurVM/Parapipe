@@ -66,7 +66,7 @@ process indexRefData {
 
   """
   mkdir ${bt2_index}
-  touch ${reffadx}
+  touch ${reffaidx}
   touch ${refdict}
   """
 }
