@@ -17,7 +17,7 @@ picard_version=2.18.16
 fqtools_version=2.3
 multiqc_version=1.11
 spades_version=3.15.3
-quast_version=5.1.0rc1
+quast_version=5.0.2
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -85,13 +85,13 @@ python3 -m pip install multiqc
 
 curl -fsSL http://cab.spbu.ru/files/release3.15.3/SPAdes-${spades_version}.tar.gz | tar -xz \
 && cd SPAdes-3.15.3 \
-&& PREFIX=/usr/local/ ./spades_compile.sh
+&& PREFIX=/usr/local/ ./spades_compile.sh \
+&& cd ..
 
-pip install --upgrade --no-deps --force-reinstall pathlib
-
-curl -fsSL https://github.com/ablab/quast/releases/download/quast_5.1.0rc1/quast-${quast_version}.tar.gz | tar -xz \
+curl -fsSL https://downloads.sourceforge.net/project/quast/quast-${quast_version}.tar.gz | tar -xz \
 && cd quast-${quast_version} \
-&& ./setup.py install
+&& python3 ./setup.py install \
+&& cd ..
 
 %environment
 export PICARD_JAR=/usr/local/bin/picard.jar

@@ -30,3 +30,38 @@ process spades {
   touch spades.log
   """
 }
+
+process quast {
+  /**
+  * Run quast on spades assemblies
+  */
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/Assembly", mode: 'copy', overwrite: 'true'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  tuple path(fasta), path(gff), path(cds)
+  path(spades_assembly)
+
+  output:
+  tuple path("aligned_stats"), path("basic_stats"), path("genome_stats")
+  path("contigs_reports")
+  tuple path("icarus.html"), path("report.html")
+  path("quast.log")
+  tuple path("*.tex")
+  tuple path("*.tsv")
+  tuple path("*.txt")
+  path("quast.log")
+
+  script:
+  """
+  quast.py -o ./ -r ${fasta} -g ${gff } ${spades_assembly}
+  """
+
+  stub:
+  """
+  """
+}
