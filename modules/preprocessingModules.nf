@@ -43,7 +43,7 @@ process fastQC {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/fastQC_reports", mode: 'copy'
+  publishDir "${params.output_dir}/${sample_name}/fastQC", mode: 'copy'
 
   memory '5 GB'
 
@@ -51,7 +51,7 @@ process fastQC {
   tuple val(sample_name), path(fq1), path(fq2)
 
   output:
-  path("*", emit: fastQC_all)
+  path("*", emit: fastQC_report)
 
   script:
   fqc_log = "${sample_name}fqc.log"
@@ -67,6 +67,27 @@ process fastQC {
 
   """
   touch ${report}
+  """
+}
+
+process multiQC {
+  /**
+  * TODO: this doesn't work at all, I don't know why
+  */
+
+  publishDir "${params.output_dir}/QC_reports", mode: 'copy'
+
+  memory '5 GB'
+
+  input:
+  path(fastQC_reports)
+
+  output:
+  path("fastqc_paths.txt", emit: multiQC_report)
+
+  script:
+  """
+  echo ${fastQC_reports} >> fastqc_paths.txt
   """
 }
 
@@ -180,5 +201,27 @@ process deduplication {
   """
   touch ${dedup_bam}
   touch ${metrics}
+  """
+}
+
+process qualimap {
+  /**
+  * TODO: this doesn't seem to behave as expected. Claims no reads map.
+  */
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/preprocessing/qualimap", mode: 'copy'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(dedup_bam)
+
+  output:
+
+  script:
+  """
+  qualimap bamqc -bam ${dedup_bam} -outdir ./ -outformat HTML
   """
 }

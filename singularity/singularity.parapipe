@@ -3,6 +3,7 @@ From: debian:buster
 %labels
 maintainer="morrisa28@cardiff.ac.uk"
 about.summary="parasite genomics pipeline container"
+
 %post
 
 python_version=3.6.5
@@ -11,10 +12,12 @@ trimgalore_version=0.6.7
 bowtie2_version=2.3.4.1
 htslib_version=1.12
 samtools_version=1.12
+bcftools_version=1.12
 picard_version=2.18.16
 fqtools_version=2.3
-qualimap_version=2.2.1
 multiqc_version=1.11
+spades_version=3.15.3
+quast_version=5.1.0rc1
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -39,7 +42,7 @@ curl -fsSL "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${f
 
 python3 -m pip install --upgrade cutadapt
 
-curl -fsSL "https://github.com/FelixKrueger/TrimGalore/archive/refs/tags/${trimgalore_version}.tar.gz" | tar xzf \
+curl -fsSL "https://github.com/FelixKrueger/TrimGalore/archive/refs/tags/${trimgalore_version}.tar.gz" | tar -xz \
 && mv ./TrimGalore-${trimgalore_version}/trim_galore /usr/local/bin \
 && rm trimgalore_v${trimgalore_version}.tar.gz \
 && rm -r ./TrimGalore-${trimgalore_version}
@@ -56,7 +59,11 @@ curl -fsSL "https://github.com/samtools/samtools/archive/${samtools_version}.tar
 && curl -fsSL https://github.com/samtools/htslib/releases/download/${htslib_version}/htslib-${htslib_version}.tar.bz2 | tar -xj \
 && make -C samtools-${samtools_version} -j HTSDIR=../htslib-${htslib_version} \
 && make -C samtools-${samtools_version} -j HTSDIR=../htslib-${htslib_version} prefix=/usr/local install \
-&& rm -r samtools-${samtools_version}
+&& rm -r samtools-${samtools_version} \
+&& curl -fsSL https://github.com/samtools/bcftools/archive/refs/tags/${bcftools_version}.tar.gz | tar -xz \
+&& make -C bcftools-${bcftools_version} -j HTSDIR=../htslib-${htslib_version} \
+&& make -C bcftools-${bcftools_version} -j HTSDIR=../htslib-${htslib_version} prefix=/usr/local install \
+&& rm -r bcftools-${bcftools_version}
 
 curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}.tar.gz | tar -xz \
 && mv htslib-${htslib_version} fqtools-${fqtools_version} \
@@ -74,14 +81,17 @@ curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}
 && cd .. \
 && rm -r fqtools-${fqtools_version}
 
-curl -fsSL "https://bitbucket.org/kokonech/qualimap/downloads/qualimap_v${qualimap_version}.zip" -o ./qualimap_v${qualimap_version}.zip \
-&& unzip qualimap_v${qualimap_version}.zip \
-&& ln -s $PWD/qualimap_v${qualimap_version}/qualimap /usr/local/bin \
-&& rm -r ./qualimap_v${qualimap_version}.zip
-
 python3 -m pip install multiqc
 
-PATH=${PATH}:$PWD/qualimap_v${qualimap_version}
+curl -fsSL http://cab.spbu.ru/files/release3.15.3/SPAdes-${spades_version}.tar.gz | tar -xz \
+&& cd SPAdes-3.15.3 \
+&& PREFIX=/usr/local/ ./spades_compile.sh
+
+pip install --upgrade --no-deps --force-reinstall pathlib
+
+curl -fsSL https://github.com/ablab/quast/releases/download/quast_5.1.0rc1/quast-${quast_version}.tar.gz | tar -xz \
+&& cd quast-${quast_version} \
+&& ./setup.py install
 
 %environment
 export PICARD_JAR=/usr/local/bin/picard.jar

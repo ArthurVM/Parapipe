@@ -7,6 +7,8 @@ nextflow.enable.dsl=2
 include {printHelp} from './modules/help.nf'
 include {prepRef} from './workflows/prepref.nf'
 include {preprocessing} from './workflows/preprocessing.nf'
+include {callVariants} from './workflows/varanalysis.nf'
+include {assembly} from './workflows/assembly.nf'
 
 params.help = ""
 
@@ -62,6 +64,9 @@ workflow {
   main:
     prepRef(params.genome)
 
-    preprocessing(input_files, "${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome}")
+    preprocessing(input_files, prepRef.out.ref_bt2index)
 
+    callVariants(input_files, preprocessing.out.dedup_bam, prepRef.out.refdata)
+
+    assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
 }

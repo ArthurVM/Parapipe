@@ -55,9 +55,18 @@ def downloadData(genome_id):
     """ Downloads genome and annotation data for the specified reference genome
     """
 
-    if genome_id == "cryptosporidium_hominis":
-        ## handle all crypto seperately?
-        ftpdir = "https://cryptodb.org/common/downloads/Current_Release/ChominisUdeA01"
+    if genome_id.startswith("cryptosporidium"):
+        ## handle all Crypto seperately
+
+        ftpbase = "https://cryptodb.org/common/downloads/Current_Release/"
+        cryptorefdict = {\
+        "hominis" : "ChominisUdeA01", \
+        "parvum" : "CparvumIOWA-ATCC", \
+        "muris" : "CmurisRN66", \
+        "meleagridis" : "CmeleagridisUKMEL1"
+        }
+        species = genome_id.split("_")[1]
+        ftpdir = os.path.join(ftpbase, cryptorefdict[species])
 
         gff_path = getCryptoGFF(ftpdir)
         fasta_path, annoCDS_path = getCryptoFASTA(ftpdir)
