@@ -15,7 +15,7 @@ process runSNP {
   input:
   tuple val(sample_name), path(fq1), path(fq2)
   path(dedup_bam)
-  tuple path(fasta), path(gff), path(cds)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
 
   output:
   path("${sample_name}.var.vcf"), emit: vcf

@@ -43,7 +43,7 @@ process quast {
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(fasta), path(gff), path(cds)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
   path(spades_assembly)
 
   output:

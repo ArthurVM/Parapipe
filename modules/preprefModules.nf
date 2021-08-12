@@ -5,7 +5,7 @@ process downloadRefData {
   * download genome and annotation files
   */
 
-  publishDir "${params.output_dir}/REFDATA/", mode: 'copy', overwrite: 'true', pattern: '*{.fasta,.gff}'
+  publishDir "${params.output_dir}/REFDATA/", mode: 'copy', overwrite: 'true', pattern: '*{.fasta,.gff,.gaf}'
 
   memory '5 GB'
 
@@ -13,7 +13,7 @@ process downloadRefData {
   val(genome_id)
 
   output:
-  tuple path("${genome_id}.fasta"), path("${genome_id}.gff"), path("${genome_id}_cds.fasta"), emit: refdata
+  tuple path("${genome_id}.fasta"), path("${genome_id}.gff"), path("${genome_id}_cds.fasta"), path("${genome_id}_GO.gaf"), emit: refdata
 
   script:
   """
@@ -22,12 +22,14 @@ process downloadRefData {
 
   stub:
   fasta = "${genome_id}.fasta"
+  gaf = "${genome_id}_GO.gaf"
   gff = "${genome_id}.gff"
   cds_fasta = "${genome_id}_cds.fasta"
 
   """
   touch $fasta
   touch $gff
+  touch $gaf
   touch $cds_fasta
   """
 
@@ -43,7 +45,7 @@ process indexRefData {
   memory '5 GB'
 
   input:
-  tuple path(fasta), path(gff), path(cds)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
   val(genome_id)
 
   output:

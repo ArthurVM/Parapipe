@@ -69,12 +69,14 @@ def downloadData(genome_id):
         ftpdir = os.path.join(ftpbase, cryptorefdict[species])
 
         gff_path = getCryptoGFF(ftpdir)
+        gaf_path = getCryptoGAF(ftpdir)
         fasta_path, annoCDS_path = getCryptoFASTA(ftpdir)
 
-        print(gff_path, fasta_path, annoCDS_path)
+        print(gff_path, gaf_path, fasta_path, annoCDS_path)
 
         ## perform downloads
         command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
+        command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
         command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
         command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
 
@@ -90,6 +92,15 @@ def getCryptoGFF(ftpdir):
     gff = curlOut.strip("\n").split('.gff">')[1].split('</a>')[0]
 
     return os.path.join(f"{ftpdir}/gff/data/", gff)
+
+def getCryptoGAF(ftpdir):
+    """ takes html output from the curl runline of CryptoDB and returns the GAF path
+    """
+    cmdline = f"curl -s {ftpdir}/gaf/"
+    curlOut = str(command(cmdline).run_comm(1).decode("utf-8").rstrip())
+    gff = curlOut.strip("\n").split('.gaf">')[1].split('</a>')[0]
+
+    return os.path.join(f"{ftpdir}/gaf/data/", gff)
 
 def getCryptoFASTA(ftpdir):
     """ takes html output from the curl runline of CryptoDB and returns the FASTA path
