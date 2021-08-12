@@ -87,6 +87,7 @@ process multiQC {
 
   script:
   """
+  echo $fastQC_reports
   echo ${fastQC_reports} >> fastqc_paths.txt
   """
 }

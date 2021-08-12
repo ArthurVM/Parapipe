@@ -32,7 +32,6 @@ process downloadRefData {
   touch $gaf
   touch $cds_fasta
   """
-
 }
 
 process indexRefData {

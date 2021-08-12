@@ -18,6 +18,8 @@ fqtools_version=2.3
 multiqc_version=1.11
 spades_version=3.15.3
 quast_version=5.0.2
+trf_version=4.09.1
+pilon_version=1.24
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -92,6 +94,19 @@ curl -fsSL https://downloads.sourceforge.net/project/quast/quast-${quast_version
 && cd quast-${quast_version} \
 && python3 ./setup.py install \
 && cd ..
+
+curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_version}.tar.gz | tar -xz \
+&& cd TRF-{trf_version} \
+&& mkdir build; cd build \
+&& ../configure \
+&& make \
+&& make install \
+&& cd ../../ \
+&& rm v{trf_version}.tar.gz \
+&& rm -r TRF-{trf_version}
+
+curl -fsSL https://github.com/broadinstitute/pilon/releases/download/v${pilon_version}/pilon-${pilon_version}.jar -o pilon-${pilon_version}.jar \
+&& mv pilon-${pilon_version}.jar /usr/local/bin/
 
 %environment
 export PICARD_JAR=/usr/local/bin/picard.jar
