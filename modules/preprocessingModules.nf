@@ -7,6 +7,8 @@ process checkFqValidity {
 
   tag { sample_name }
 
+  errorStrategy 'ignore'
+
   publishDir "${params.output_dir}/$sample_name/preprocessing", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
   memory '5 GB'
@@ -24,7 +26,7 @@ process checkFqValidity {
   """
   is_ok=\$(fqtools validate $fq1 $fq2)
 
-  if [ \$is_ok == 'OK' ]; then printf 'OK' && printf "" >> ${error_log}; else echo "error: sample did not pass fqtools validation check" >> ${error_log}; fi
+  if [ \$is_ok == 'OK' ]; then printf 'OK' && printf "" >> ${error_log}; else echo "error: sample did not pass fqtools validation check\n \$is_ok" >> ${error_log}; fi
   """
 
   stub:
@@ -97,6 +99,8 @@ process trimGalore {
   * run trimGalore on fastq pair
   */
   tag { sample_name }
+
+  errorStrategy 'ignore'
 
   publishDir "${params.output_dir}/$sample_name/preprocessing/Trim", mode: 'copy'
 

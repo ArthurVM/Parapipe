@@ -18,7 +18,7 @@ workflow preprocessing {
 
     main:
 
-      // checkFqValidity(input_files)
+      checkFqValidity(input_files)
 
       fastQC(input_files)
 
