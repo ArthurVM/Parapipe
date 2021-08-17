@@ -68,5 +68,5 @@ workflow {
 
     callVariants(input_files, preprocessing.out.dedup_bam, prepRef.out.refdata)
 
-    assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
+    // assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
 }

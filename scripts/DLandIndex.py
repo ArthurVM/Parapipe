@@ -60,17 +60,58 @@ def downloadData(genome_id):
 
         ftpbase = "https://cryptodb.org/common/downloads/Current_Release/"
         cryptorefdict = {\
-        "hominis" : "ChominisUdeA01", \
-        "parvum" : "CparvumIOWA-ATCC", \
-        "muris" : "CmurisRN66", \
+        "hominis"     : "ChominisUdeA01", \
+        "parvum"      : "CparvumIOWA-ATCC", \
+        "muris"       : "CmurisRN66", \
         "meleagridis" : "CmeleagridisUKMEL1"
         }
         species = genome_id.split("_")[1]
         ftpdir = os.path.join(ftpbase, cryptorefdict[species])
 
-        gff_path = getCryptoGFF(ftpdir)
-        gaf_path = getCryptoGAF(ftpdir)
-        fasta_path, annoCDS_path = getCryptoFASTA(ftpdir)
+        gff_path = getGFF(ftpdir)
+        gaf_path = getGAF(ftpdir)
+        fasta_path, annoCDS_path = getFASTA(ftpdir)
+
+        print(gff_path, gaf_path, fasta_path, annoCDS_path)
+
+        ## perform downloads
+        command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
+        command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
+        command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
+        command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
+
+    elif genome_id.startswith("plasmodium"):
+        ## handle all Plasmo seperately
+
+        ftpbase = "https://plasmodb.org/common/downloads/Current_Release/"
+        plasmorefdict = {\
+        "falciparum"      : "Pfalciparum3D7", \
+        "falciparum_3D7"  : "Pfalciparum3D7", \
+        "falciparum_7G8"  : "Pfalciparum7G8", \
+        "falciparum_CD01" : "PfalciparumCD01", \
+        "falciparum_Dd2"  : "PfalciparumDd2", \
+        "falciparum_GA01" : "PfalciparumGA01", \
+        "falciparum_GB4"  : "PfalciparumGB4", \
+        "falciparum_GN01" : "PfalciparumGN01", \
+        "falciparum_HB3"  : "PfalciparumHB3", \
+        "falciparum_IT"   : "PfalciparumIT", \
+        "falciparum_KE01" : "PfalciparumKE01", \
+        "falciparum_KH01" : "PfalciparumKH01", \
+        "falciparum_KH02" : "PfalciparumKH02", \
+        "falciparum_ML01" : "PfalciparumML01", \
+        "falciparum_SD01" : "PfalciparumSD01", \
+        "falciparum_SN01" : "PfalciparumSN01", \
+        "falciparum_TG01" : "PfalciparumTG01", \
+        "knowlesi"        : "PknowlesiA1H1", \
+        "malariae"        : "PmalariaeUG01", \
+        "vivax"           : "PvivaxP01"
+        }
+        species = genome_id.split("_")[1]
+        ftpdir = os.path.join(ftpbase, plasmorefdict[species])
+
+        gff_path = getGFF(ftpdir)
+        gaf_path = getGAF(ftpdir)
+        fasta_path, annoCDS_path = getFASTA(ftpdir)
 
         print(gff_path, gaf_path, fasta_path, annoCDS_path)
 
@@ -84,7 +125,7 @@ def downloadData(genome_id):
         ftpdir = "ftp://ftp.ensemblgenomes.org/pub/current/protists/fasta/"
         None
 
-def getCryptoGFF(ftpdir):
+def getGFF(ftpdir):
     """ takes html output from the curl runline of CryptoDB and returns the GFF path
     """
     cmdline = f"curl -s {ftpdir}/gff/data/"
@@ -93,16 +134,16 @@ def getCryptoGFF(ftpdir):
 
     return os.path.join(f"{ftpdir}/gff/data/", gff)
 
-def getCryptoGAF(ftpdir):
+def getGAF(ftpdir):
     """ takes html output from the curl runline of CryptoDB and returns the GAF path
     """
     cmdline = f"curl -s {ftpdir}/gaf/"
     curlOut = str(command(cmdline).run_comm(1).decode("utf-8").rstrip())
-    gff = curlOut.strip("\n").split('.gaf">')[1].split('</a>')[0]
+    gaf = curlOut.strip("\n").split('.gaf">')[1].split('</a>')[0]
 
-    return os.path.join(f"{ftpdir}/gaf/data/", gff)
+    return os.path.join(f"{ftpdir}/gaf/", gaf)
 
-def getCryptoFASTA(ftpdir):
+def getFASTA(ftpdir):
     """ takes html output from the curl runline of CryptoDB and returns the FASTA path
     """
     cmdline = f"curl -s {ftpdir}/fasta/data/"
@@ -124,7 +165,6 @@ def parseArgs(argv):
     return args
 
 def main(argv):
-
     args = parseArgs(argv)
     genome_id = checkGenomeID(args)
     downloadData(genome_id)
