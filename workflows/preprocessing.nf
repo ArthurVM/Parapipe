@@ -17,7 +17,6 @@ workflow preprocessing {
       ref_bt2index
 
     main:
-
       checkFqValidity(input_files)
 
       fastQC(input_files)

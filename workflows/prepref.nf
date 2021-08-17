@@ -13,6 +13,7 @@ workflow prepRef {
 
     main:
       downloadRefData(genome_id)
+
       indexRefData(downloadRefData.out.refdata, genome_id)
 
     emit:
