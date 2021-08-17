@@ -1,4 +1,4 @@
 work/
-singularity/singularity.sif
+singularity/parapipe.sif
 test/
 .nextflow*
