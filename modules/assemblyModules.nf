@@ -129,7 +129,7 @@ process mapBT2 {
 
   """
   echo $ref_bt2index
-  bowtie2 -p ${task.cpus} -x ${ref_bt2index}/${ref_bt2index} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -f 4 -Shb - | samtools sort - -o ${bam}
+  bowtie2 -p ${task.cpus} -x ${ref_bt2index}/${ref_bt2index} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
   samtools index ${bam}
   """
 

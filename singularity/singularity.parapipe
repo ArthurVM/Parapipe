@@ -7,6 +7,7 @@ about.summary="parasite genomics pipeline container"
 %post
 
 python_version=3.6.5
+ngstoolkit_version=0.1-alpha
 fastqc_version=0.11.9
 trimgalore_version=0.6.7
 bowtie2_version=2.3.4.1
@@ -34,6 +35,9 @@ apt-get update \
 && ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
 && ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
 && pip3 install --upgrade pip
+
+curl -fsSL https://github.com/ArthurVM/NGS-Gini-Analysis-Toolkit/archive/refs/tags/v${ngstoolkit_version}.tar.gz | tar -xz \
+&& pip3 install -r ./NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/dependancies.txt
 
 curl -fsSL "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${fastqc_version}.zip" -o fastqc_v${fastqc_version}.zip \
 && unzip fastqc_v${fastqc_version}.zip \
@@ -96,21 +100,22 @@ curl -fsSL https://downloads.sourceforge.net/project/quast/quast-${quast_version
 && cd ..
 
 curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_version}.tar.gz | tar -xz \
-&& cd TRF-{trf_version} \
+&& cd TRF-${trf_version} \
 && mkdir build; cd build \
 && ../configure \
 && make \
 && make install \
-&& cd ../../ \
-&& rm v{trf_version}.tar.gz \
-&& rm -r TRF-{trf_version}
+&& cd / \
+&& rm v${trf_version}.tar.gz \
+&& rm -r TRF-${trf_version}
 
 curl -fsSL https://github.com/broadinstitute/pilon/releases/download/v${pilon_version}/pilon-${pilon_version}.jar -o pilon-${pilon_version}.jar \
 && mv pilon-${pilon_version}.jar /usr/local/bin/
 
 %environment
-export PICARD_JAR=/usr/local/bin/picard.jar
 export htslib_version=1.12
+export PATH=$PATH:/NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/src/
+export PICARD_JAR=/usr/local/bin/picard.jar
 export LD_LIBRARY_PATH=/usr/local/lib
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8

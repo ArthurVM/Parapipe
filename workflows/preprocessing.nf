@@ -8,6 +8,7 @@ include {checkFqValidity} from '../modules/preprocessingModules.nf'
 include {trimGalore} from '../modules/preprocessingModules.nf'
 include {mapBT2} from '../modules/preprocessingModules.nf'
 include {deduplication} from '../modules/preprocessingModules.nf'
+include {gini} from '../modules/preprocessingModules.nf'
 
 // define workflow
 workflow preprocessing {
@@ -29,7 +30,9 @@ workflow preprocessing {
 
       deduplication(input_files, mapBT2.out.bam)
 
+      gini(input_files, mapBT2.out.bam)
+
     emit:
-      dedup_bam = deduplication.out.dedup_bam
+      bam = mapBT2.out.bam
       trimmed_fqs = trimGalore.out.tg_fqs
 }

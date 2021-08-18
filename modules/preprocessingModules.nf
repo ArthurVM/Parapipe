@@ -162,7 +162,7 @@ process mapBT2 {
 
   """
   echo $ref_bt2index
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -f 4 -Shb - | samtools sort - -o ${bam}
+  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
   """
 
   stub:
@@ -228,5 +228,29 @@ process qualimap {
   script:
   """
   qualimap bamqc -bam ${dedup_bam} -outdir ./ -outformat HTML
+  """
+}
+
+process gini {
+  /**
+  * calculate the gini of mapped read coverage
+  */
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/preprocessing/gini", mode: 'copy'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(bam)
+
+  output:
+  path "${sample_name}.GG", emit: GG
+
+  script:
+  """
+  samtools depth -a ${bam} > ${sample_name}.doc.bed
+  python3 /NGS-Gini-Analysis-Toolkit-0.1-alpha/src/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
   """
 }
