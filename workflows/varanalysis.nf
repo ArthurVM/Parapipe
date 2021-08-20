@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 
 // import modules
 include {runSNP} from '../modules/varanalysisModules.nf'
+include {plotSNP} from '../modules/varanalysisModules.nf'
 
 // define workflow
 workflow callVariants {
@@ -15,4 +16,5 @@ workflow callVariants {
     main:
       runSNP(input_files, bam, refdata)
 
+      plotSNP(input_files, runSNP.out.vcf, refdata)
 }

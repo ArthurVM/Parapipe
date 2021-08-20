@@ -3,7 +3,6 @@
 process runSNP {
   /**
   * Call snps in mapped reads
-  * TODO: something weird is happening and it is not reporting any SNPs, I dont know why this is
   */
 
   tag { sample_name }
@@ -32,5 +31,41 @@ process runSNP {
 
   """
   touch ${sample_name}.var.vcf
+  """
+}
+
+process plotSNP {
+  /**
+  * Plot SNPs across each chromosome
+  */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantCall", mode: 'copy', overwrite: 'true'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(vcf)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+  path("SNPDist.pdf"), emit: pdf
+
+  script:
+  scripts = "${workflow.launchDir}/scripts/"
+  """
+  echo "Preprocessing ${fasta}..."
+  python3 ${scripts}/removeFASTAdesc.py ${fasta}
+  echo "Splitting ${vcf} by chromosome ID..."
+  python3 ${scripts}/splitVCF.py ${vcf}
+  echo "Creating plots..."
+  Rscript ${scripts}/SNPdist.R -v ./ -f ./tmp_descStripped.fasta -g ${gff}
+  """
+
+  stub:
+  """
+  touch SNPDist.pdf
   """
 }

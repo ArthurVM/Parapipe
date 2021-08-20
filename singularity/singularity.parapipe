@@ -36,6 +36,13 @@ apt-get update \
 && ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
 && pip3 install --upgrade pip
 
+pip3 install biopython
+
+echo "install.packages(\"optparse\", repos=\"https://cran.rstudio.com\")" | R --no-save
+echo "install.packages(\"ape\", repos=\"https://cran.rstudio.com\")" | R --no-save
+echo "install.packages(\"vcfR\", repos=\"https://cran.rstudio.com\")" | R --no-save
+echo "install.packages(\"glue\", repos=\"https://cran.rstudio.com\")" | R --no-save
+
 curl -fsSL https://github.com/ArthurVM/NGS-Gini-Analysis-Toolkit/archive/refs/tags/v${ngstoolkit_version}.tar.gz | tar -xz \
 && pip3 install -r ./NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/dependancies.txt
 
