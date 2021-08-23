@@ -22,7 +22,7 @@ quast_version=5.0.2
 trf_version=4.09.1
 pilon_version=1.24
 
-PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev software-properties-common openjdk-11-jre-headless"
+PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
 
 apt-get update \

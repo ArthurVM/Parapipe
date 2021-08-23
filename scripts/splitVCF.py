@@ -21,8 +21,11 @@ def splitVCF(vcf):
                 chr = line.split("\t")[0]
                 chrdict[chr].append(line)
 
+    outdir = f"{os.getcwd()}/vcf_split"
+    os.mkdir(outdir)
+
     for chr, line in chrdict.items():
-        with open(f"tmp.{chr}.vcf", "w") as fout:
+        with open(f"{outdir}/tmp.{chr}.vcf", "w") as fout:
             newmeta = []
             for m in meta:
                 if m.startswith("##contig"):

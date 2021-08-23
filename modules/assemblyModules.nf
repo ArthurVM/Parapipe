@@ -150,6 +150,8 @@ process pilon {
 
   tag { sample_name }
 
+  errorStrategy 'ignore'
+
   cpus 8
   memory '15 GB'
 
@@ -163,10 +165,14 @@ process pilon {
   output:
   path("${sample_name}.fasta")
   path("${sample_name}.vcf")
+  path("pilon.log")
+  path("pilon.err")
 
   script:
+  pilon_stdout = "pilon.log"
+  pilon_stderr = "pilon.err"
   """
-  java -jar /usr/local/bin/pilon-1.24.jar --genome ${scaffolds} --bam ${bam} --output ${sample_name} --vcf
+  java -jar /usr/local/bin/pilon-1.24.jar --genome ${scaffolds} --bam ${bam} --output ${sample_name} --vcf > ${pilon_stdout} 2> ${pilon_stderr}
   """
 
   stub:
