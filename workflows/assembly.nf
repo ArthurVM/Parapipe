@@ -26,4 +26,7 @@ workflow assembly {
       mapBT2(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
 
       pilon(input_files, mapBT2.out.bam, spades.out.scaffolds)
+
+    emit:
+      pilon_fasta = pilon.out.pilon_fasta
 }

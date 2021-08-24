@@ -7,7 +7,7 @@ process runSNP {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantCall", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 
@@ -75,7 +75,7 @@ process plotSNP {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantCall", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 
@@ -98,5 +98,35 @@ process plotSNP {
   stub:
   """
   touch SNPDist.pdf
+  """
+}
+
+process findSTRs {
+  /**
+  * Find Short Tandem Repeats using TRF
+  */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/STR", mode: 'copy', overwrite: 'true', pattern: "*.dat"
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(pilon_fasta)
+
+  output:
+  path("trf.log")
+
+  script:
+  trf_log = "trf.log"
+  """
+  trf4.10.0-rc.2.linux64.exe ${pilon_fasta} 2 7 7 80 10 50 500 -d -h &> ${trf_log}
+  """
+
+  stub:
+
+  """
   """
 }

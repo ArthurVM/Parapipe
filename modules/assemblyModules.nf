@@ -163,8 +163,8 @@ process pilon {
   path(scaffolds)
 
   output:
-  path("${sample_name}.fasta")
-  path("${sample_name}.vcf")
+  path("${sample_name}.fasta"), emit: pilon_fasta
+  path("${sample_name}.vcf"), emit: pilon_vcf
   path("pilon.log")
   path("pilon.err")
 
