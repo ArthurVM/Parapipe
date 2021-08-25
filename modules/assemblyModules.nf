@@ -101,7 +101,7 @@ process indexAssembly {
   """
 }
 
-process mapBT2 {
+process map2SPAdesFasta {
   /**
   * map reads to their genome assembly using Bowtie2
   */

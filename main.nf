@@ -7,7 +7,8 @@ nextflow.enable.dsl=2
 include {printHelp} from './modules/help.nf'
 include {prepRef} from './workflows/prepref.nf'
 include {preprocessing} from './workflows/preprocessing.nf'
-include {callVariants} from './workflows/varanalysis.nf'
+include {callSNPs} from './workflows/varanalysis.nf'
+include {callSTRs} from './workflows/varanalysis.nf'
 include {assembly} from './workflows/assembly.nf'
 
 params.help = ""
@@ -66,7 +67,9 @@ workflow {
 
     preprocessing(input_files, prepRef.out.ref_bt2index)
 
+    callSNPs(input_files, preprocessing.out.bam, prepRef.out.refdata)
+
     assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
 
-    callVariants(input_files, preprocessing.out.bam, prepRef.out.refdata, assembly.out.pilon_fasta)
+    callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.pilon_fasta)
 }

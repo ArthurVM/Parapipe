@@ -6,7 +6,7 @@ include {fastQC} from '../modules/preprocessingModules.nf'
 include {multiQC} from '../modules/preprocessingModules.nf'
 include {checkFqValidity} from '../modules/preprocessingModules.nf'
 include {trimGalore} from '../modules/preprocessingModules.nf'
-include {mapBT2} from '../modules/preprocessingModules.nf'
+include {map2Ref} from '../modules/preprocessingModules.nf'
 include {deduplication} from '../modules/preprocessingModules.nf'
 include {gini} from '../modules/preprocessingModules.nf'
 
@@ -26,13 +26,13 @@ workflow preprocessing {
 
       trimGalore(input_files)
 
-      mapBT2(input_files, trimGalore.out.tg_fqs, ref_bt2index)
+      map2Ref(input_files, trimGalore.out.tg_fqs, ref_bt2index)
 
-      deduplication(input_files, mapBT2.out.bam)
+      deduplication(input_files, map2Ref.out.bam)
 
-      gini(input_files, mapBT2.out.bam)
+      gini(input_files, map2Ref.out.bam)
 
     emit:
-      bam = mapBT2.out.bam
+      bam = map2Ref.out.bam
       trimmed_fqs = trimGalore.out.tg_fqs
 }

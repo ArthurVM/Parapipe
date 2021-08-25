@@ -1,6 +1,6 @@
 // modules for identifying SNPs in mapped reads
 
-process findSNPs {
+process runSNP {
   /**
   * Call snps in mapped reads
   */
@@ -135,97 +135,4 @@ process findSTRs {
   """
   touch ${trf_dat}
   """
-}
-
-process indexPilonFasta {
-  /**
-  * index the Pilon'ed SPAdes assembly
-  */
-
-  tag { sample_name }
-
-  memory '5 GB'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(pilon_fasta)
-
-  output:
-  path("${sample_name}"), emit: bt2_pilon_index
-
-  script:
-  """
-  mkdir ./${sample_name} && cd ./${sample_name}
-  bowtie2-build ../${pilon_fasta} ${sample_name} && cd ../
-  """
-
-  stub:
-  bt2_index = "./${sample_name}"
-
-  """
-  mkdir ${bt2_index}
-  """
-}
-
-process map2PilonFasta {
-  /**
-  * map trimmed reads to the Pilon'ed SPAdes assembly
-  */
-
-  tag { sample_name }
-
-  cpus 8
-  memory '15 GB'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(trimmed_fq1), path(trimmed_fq2)
-  path(ref_bt2index)
-
-  output:
-  path("${sample_name}.sorted.bam"), emit: bam
-  path("${sample_name}_alnStats.txt"), emit: map_stats
-
-  script:
-  bam = "${sample_name}.sorted.bam"
-  bai = "${sample_name}.bam.bai"
-  stats = "${sample_name}_alnStats.txt"
-
-  """
-  echo $ref_bt2index
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
-  """
-
-  stub:
-  bam = "${sample_name}.sorted.bam"
-  stats_txt = "${sample_name}_alnStats.txt"
-
-  """
-  touch ${bam}
-  touch ${stats_txt}
-  """
-}
-process processSTRs {
-  /**
-  * Process STRs discovered by Tandem Repeats Finder
-  */
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(bam)
-  path(trf_dat)
-  path(pilon_fasta)
-
-  output:
-
-  script:
-  """
-  jsat.str parseTRF --input ${trf_dat} --output ${sample_name}.trf.str --format str
-  jsat.str sam2fragment --input ${bam} --output ${sample_name}.fragment
-  jsat.str sortFragment --input ${sample_name}.fragment --output ${sample_name}.sorted.fragment
-  jsat.str fragment2var --trfFile ${sample_name}.trf.str --output ${sample_name}.strv ${sample_name}.sorted.fragment
-  jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.vcf --reference ${pilon_fasta}
-  """
-
-
 }

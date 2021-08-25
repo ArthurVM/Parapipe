@@ -133,7 +133,7 @@ process trimGalore {
   """
 }
 
-process mapBT2 {
+process map2Ref {
   /**
   * map reads to a reference genome using Bowtie2
   */

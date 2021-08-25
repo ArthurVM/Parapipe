@@ -119,8 +119,13 @@ curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_v
 curl -fsSL https://github.com/broadinstitute/pilon/releases/download/v${pilon_version}/pilon-${pilon_version}.jar -o pilon-${pilon_version}.jar \
 && mv pilon-${pilon_version}.jar /usr/local/bin/
 
+curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strviper.tar.gz\
+&& tar -xzf strviper.tar.gz \
+&& rm strviper.tar.gz
+
 %environment
 export htslib_version=1.12
+export PATH=$PATH:/strviper/scripts/
 export PATH=$PATH:/NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/src/
 export PICARD_JAR=/usr/local/bin/picard.jar
 export LD_LIBRARY_PATH=/usr/local/lib
