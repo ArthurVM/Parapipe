@@ -146,14 +146,15 @@ process map2SPAdesFasta {
 process pilon {
   /**
   * map reads to their genome assembly using Bowtie2
+  * TODO: this throws weird errors, needs fixing
   */
 
   tag { sample_name }
 
-  errorStrategy 'ignore'
-
-  cpus 8
-  memory '15 GB'
+  errorStrategy = {task.attempt <= 3 ? 'retry' : 'ignore'}
+  memory = {5 GB * task.attempt}
+  cpus 4
+  maxRetries = 3
 
   publishDir "${params.output_dir}/$sample_name/Assembly/Pilon", mode: 'copy'
 

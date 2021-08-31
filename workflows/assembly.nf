@@ -21,12 +21,13 @@ workflow assembly {
 
       quast(input_files, refdata, spades.out.scaffolds)
 
-      indexAssembly(input_files, spades.out.scaffolds)
+      // indexAssembly(input_files, spades.out.scaffolds)
 
-      map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
+      // map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
 
-      pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
+      // pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
     emit:
-      pilon_fasta = pilon.out.pilon_fasta
+      // pilon_fasta = pilon.out.pilon_fasta
+      fasta = spades.out.scaffolds
 }

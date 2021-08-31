@@ -114,11 +114,11 @@ process findSTRs {
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
-  path(pilon_fasta)
+  path(fasta)
 
   output:
   tuple path("trf.stdout"), path("trf.stderr"), emit: trf_log
-  path("${pilon_fasta}.2.7.7.80.10.50.500.dat"), emit: trf_dat
+  path("${fasta}.2.7.7.80.10.50.500.dat"), emit: trf_dat
 
   script:
   trf_stdout = "trf.stdout"
@@ -127,17 +127,17 @@ process findSTRs {
   // trap is used here as a temporary fix
   """
   trap 'if [[ \$? != 0 ]]; then echo OVERRIDE EXIT; exit 0; fi' EXIT
-  trf4.10.0-rc.2.linux64.exe ${pilon_fasta} 2 7 7 80 10 50 500 -d -h 1> ${trf_stdout} 2> ${trf_stderr}
+  trf4.10.0-rc.2.linux64.exe ${fasta} 2 7 7 80 10 50 500 -d -h 1> ${trf_stdout} 2> ${trf_stderr}
   """
 
   stub:
-  trf_dat = "${pilon_fasta}.2.7.7.80.10.50.500.dat"
+  trf_dat = "${fasta}.2.7.7.80.10.50.500.dat"
   """
   touch ${trf_dat}
   """
 }
 
-process indexPilonFasta {
+process indexScaffolds {
   /**
   * index the Pilon'ed SPAdes assembly
   */
@@ -148,7 +148,7 @@ process indexPilonFasta {
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
-  path(pilon_fasta)
+  path(scaffolds)
 
   output:
   path("${sample_name}"), emit: bt2_pilon_index
@@ -156,7 +156,7 @@ process indexPilonFasta {
   script:
   """
   mkdir ./${sample_name} && cd ./${sample_name}
-  bowtie2-build ../${pilon_fasta} ${sample_name} && cd ../
+  bowtie2-build ../${scaffolds} ${sample_name} && cd ../
   """
 
   stub:
@@ -167,9 +167,9 @@ process indexPilonFasta {
   """
 }
 
-process map2PilonFasta {
+process map2Scaffolds {
   /**
-  * map trimmed reads to the Pilon'ed SPAdes assembly
+  * map trimmed reads to assembled scaffolds
   */
 
   tag { sample_name }
@@ -214,7 +214,7 @@ process processSTRs {
   tuple val(sample_name), path(fq1), path(fq2)
   path(bam)
   path(trf_dat)
-  path(pilon_fasta)
+  path(scaffolds)
 
   output:
 
@@ -224,8 +224,6 @@ process processSTRs {
   jsat.str sam2fragment --input ${bam} --output ${sample_name}.fragment
   jsat.str sortFragment --input ${sample_name}.fragment --output ${sample_name}.sorted.fragment
   jsat.str fragment2var --trfFile ${sample_name}.trf.str --output ${sample_name}.strv ${sample_name}.sorted.fragment
-  jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.vcf --reference ${pilon_fasta}
+  jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.vcf --reference ${scaffolds}
   """
-
-
 }

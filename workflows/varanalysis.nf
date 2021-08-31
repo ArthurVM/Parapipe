@@ -6,8 +6,8 @@ include {findSNPs} from '../modules/varanalysisModules.nf'
 include {plotSNP} from '../modules/varanalysisModules.nf'
 include {preprocessForPlotting} from '../modules/varanalysisModules.nf'
 include {findSTRs} from '../modules/varanalysisModules.nf'
-include {indexPilonFasta} from '../modules/varanalysisModules.nf'
-include {map2PilonFasta} from '../modules/varanalysisModules.nf'
+include {indexScaffolds} from '../modules/varanalysisModules.nf'
+include {map2Scaffolds} from '../modules/varanalysisModules.nf'
 include {processSTRs} from '../modules/varanalysisModules.nf'
 
 // define SNP workflow
@@ -32,14 +32,14 @@ workflow callSTRs {
     take:
       input_files
       trimmed_fqs
-      pilon_fasta
+      scaffolds
 
     main:
-      findSTRs(input_files, pilon_fasta)
+      findSTRs(input_files, scaffolds)
 
-      indexPilonFasta(input_files, pilon_fasta)
+      indexScaffolds(input_files, scaffolds)
 
-      map2PilonFasta(input_files, trimmed_fqs, indexPilonFasta.out.bt2_pilon_index)
+      map2Scaffolds(input_files, trimmed_fqs, indexPilonFasta.out.bt2_pilon_index)
 
-      processSTRs(input_files, map2PilonFasta.out.bam, findSTRs.out.trf_dat, pilon_fasta)
+      processSTRs(input_files, map2PilonFasta.out.bam, findSTRs.out.trf_dat, scaffolds)
 }
