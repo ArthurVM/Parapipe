@@ -8,7 +8,8 @@ include {preprocessForPlotting} from '../modules/varanalysisModules.nf'
 include {findSTRs} from '../modules/varanalysisModules.nf'
 include {indexScaffolds} from '../modules/varanalysisModules.nf'
 include {map2Scaffolds} from '../modules/varanalysisModules.nf'
-include {processSTRs} from '../modules/varanalysisModules.nf'
+include {STRViper} from '../modules/varanalysisModules.nf'
+include {SNPEff} from '../modules/varanalysisModules.nf'
 
 // define SNP workflow
 workflow callSNPs {
@@ -33,13 +34,16 @@ workflow callSTRs {
       input_files
       trimmed_fqs
       scaffolds
+      refdata
 
     main:
       findSTRs(input_files, scaffolds)
 
       indexScaffolds(input_files, scaffolds)
 
-      map2Scaffolds(input_files, trimmed_fqs, indexPilonFasta.out.bt2_pilon_index)
+      map2Scaffolds(input_files, trimmed_fqs, indexScaffolds.out.scaffold_bt2index)
 
-      processSTRs(input_files, map2PilonFasta.out.bam, findSTRs.out.trf_dat, scaffolds)
+      STRViper(input_files, map2Scaffolds.out.bam, findSTRs.out.trf_dat, scaffolds)
+
+      // SNPEff(input_files, STRViper.out.str_vcf, refdata)
 }

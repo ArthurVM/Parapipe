@@ -21,6 +21,8 @@ spades_version=3.15.3
 quast_version=5.0.2
 trf_version=4.09.1
 pilon_version=1.24
+abacas_version=1.3.1
+mummer_version=4.0.0rc1
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -68,7 +70,7 @@ curl -fsSL https://sourceforge.net/projects/bowtie-bio/files/bowtie2/${bowtie2_v
 && rm -r bowtie2-${bowtie2_version} \
 && rm bowtie2-${bowtie2_version}-source.zip
 
-curl -fsSL "https://github.com/samtools/samtools/archive/${samtools_version}.tar.gz" | tar -xz \
+curl -fsSL https://github.com/samtools/samtools/archive/${samtools_version}.tar.gz | tar -xz \
 && curl -fsSL https://github.com/samtools/htslib/releases/download/${htslib_version}/htslib-${htslib_version}.tar.bz2 | tar -xj \
 && make -C samtools-${samtools_version} -j HTSDIR=../htslib-${htslib_version} \
 && make -C samtools-${samtools_version} -j HTSDIR=../htslib-${htslib_version} prefix=/usr/local install \
@@ -123,11 +125,27 @@ curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strvipe
 && tar -xzf strviper.tar.gz \
 && rm strviper.tar.gz
 
+mkdir ABACAS \
+&& cd ABACAS \
+&& curl -fsSL https://sourceforge.net/projects/abacas/files/abacas.${abacas_version}.pl/download -o abacas.${abacas_version}.pl \
+&& curl -fsSL ftp://ftp.sanger.ac.uk/pub/resources/software/pagit/PAGIT_MissingScripts.zip -o PAGIT_MissingScripts.zip \
+&& unzip PAGIT_MissingScripts.zip
+
+curl -fsSL https://github.com/mummer4/mummer/releases/download/v4.0.0rc1/mummer-${mummer_version}.tar.gz | tar -xz \
+&& cd mummer-${mummer_version} \
+&& ./configure --prefix=/usr/local/ \
+&& make \
+&& make install \
+&& ldconfigc \
+&& cd ..
+
 %environment
 export htslib_version=1.12
 export PATH=$PATH:/strviper/scripts/
 export PATH=$PATH:/NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/src/
 export PICARD_JAR=/usr/local/bin/picard.jar
+export SNPEFF_DIR=/snpEff/
+export ABACAS_DIR=/ABACAS/
 export LD_LIBRARY_PATH=/usr/local/lib
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8

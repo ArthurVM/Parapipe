@@ -182,3 +182,42 @@ process pilon {
   touch ${sample_name}.vcf
   """
 }
+
+process abacas {
+  /**
+  * Map scaffolds to reference using ABACAS
+  */
+
+  tag { sample_name }
+
+  memory = '10 GB'
+  cpus 4
+
+  publishDir "${params.output_dir}/$sample_name/Assembly/ABACAS", mode: 'copy'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(scaffolds)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+  path("${sample_name}.abacas.fasta"), emit: abacas_fasta
+  path("${sample_name}*.features.tab"), emit: features
+  path("unused_contigs.out"), emit: unused_contigs
+
+  script:
+  mummer_module = "nucmer"
+  ref_union="${fasta}.union"
+  abacas_fasta="${scaffolds}_${fasta}.union.fasta"
+  crunch="${scaffolds}_${fasta}.union.fasta.crunch"
+  tab="${scaffolds}_${fasta}.union.fasta.tab"
+  """
+  perl \$ABACAS_DIR/joinMultifasta.pl ${fasta} ${fasta}.union
+  perl \$ABACAS_DIR/abacas.1.3.1.pl -r ${ref_union} -q ${scaffolds} -p ${mummer_module}
+  perl \$ABACAS_DIR/splitABACASunion.pl ${fasta} ${ref_union} ${abacas_fasta} ${crunch} ${tab} ${sample_name}
+  """
+
+  stub:
+  """
+  """
+}

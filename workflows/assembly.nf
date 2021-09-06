@@ -7,6 +7,7 @@ include {quast} from '../modules/assemblyModules.nf'
 include {indexAssembly} from '../modules/assemblyModules.nf'
 include {map2SPAdesFasta} from '../modules/assemblyModules.nf'
 include {pilon} from '../modules/assemblyModules.nf'
+include {abacas} from '../modules/assemblyModules.nf'
 
 // define workflow
 workflow assembly {
@@ -27,7 +28,9 @@ workflow assembly {
 
       // pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
+      abacas(input_files, spades.out.scaffolds, refdata)
+
     emit:
       // pilon_fasta = pilon.out.pilon_fasta
-      fasta = spades.out.scaffolds
+      fasta = abacas.out.abacas_fasta
 }

@@ -71,5 +71,5 @@ workflow {
 
     assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
 
-    callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta)
+    callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
 }

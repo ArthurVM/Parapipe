@@ -114,11 +114,11 @@ process findSTRs {
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
-  path(fasta)
+  path(scaffolds)
 
   output:
   tuple path("trf.stdout"), path("trf.stderr"), emit: trf_log
-  path("${fasta}.2.7.7.80.10.50.500.dat"), emit: trf_dat
+  path("${scaffolds}.2.7.7.80.10.50.500.dat"), emit: trf_dat
 
   script:
   trf_stdout = "trf.stdout"
@@ -127,11 +127,11 @@ process findSTRs {
   // trap is used here as a temporary fix
   """
   trap 'if [[ \$? != 0 ]]; then echo OVERRIDE EXIT; exit 0; fi' EXIT
-  trf4.10.0-rc.2.linux64.exe ${fasta} 2 7 7 80 10 50 500 -d -h 1> ${trf_stdout} 2> ${trf_stderr}
+  trf4.10.0-rc.2.linux64.exe ${scaffolds} 2 7 7 80 10 50 500 -d -h 1> ${trf_stdout} 2> ${trf_stderr}
   """
 
   stub:
-  trf_dat = "${fasta}.2.7.7.80.10.50.500.dat"
+  trf_dat = "${scaffolds}.2.7.7.80.10.50.500.dat"
   """
   touch ${trf_dat}
   """
@@ -139,7 +139,7 @@ process findSTRs {
 
 process indexScaffolds {
   /**
-  * index the Pilon'ed SPAdes assembly
+  * index the assembled scaffolds
   */
 
   tag { sample_name }
@@ -151,7 +151,7 @@ process indexScaffolds {
   path(scaffolds)
 
   output:
-  path("${sample_name}"), emit: bt2_pilon_index
+  path("./${sample_name}/"), emit: scaffold_bt2index
 
   script:
   """
@@ -180,7 +180,7 @@ process map2Scaffolds {
   input:
   tuple val(sample_name), path(fq1), path(fq2)
   tuple path(trimmed_fq1), path(trimmed_fq2)
-  path(ref_bt2index)
+  path(scaffold_bt2index)
 
   output:
   path("${sample_name}.sorted.bam"), emit: bam
@@ -190,10 +190,10 @@ process map2Scaffolds {
   bam = "${sample_name}.sorted.bam"
   bai = "${sample_name}.bam.bai"
   stats = "${sample_name}_alnStats.txt"
-
+  bt2_index = "${scaffold_bt2index}/${sample_name}"
   """
-  echo $ref_bt2index
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+  echo MAPPING TO $bt2_index
+  bowtie2 --very-sensitive -p ${task.cpus} -x ${scaffold_bt2index}/${sample_name} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
   """
 
   stub:
@@ -205,10 +205,17 @@ process map2Scaffolds {
   touch ${stats_txt}
   """
 }
-process processSTRs {
+
+process STRViper {
   /**
-  * Process STRs discovered by Tandem Repeats Finder
+  * Process STRs discovered by Tandem Repeats Finder using STRViper
   */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/STR", mode: 'copy', overwrite: 'true'
+
+  memory '5 GB'
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
@@ -217,6 +224,7 @@ process processSTRs {
   path(scaffolds)
 
   output:
+  path("${sample_name}.vcf"), emit: str_vcf
 
   script:
   """
@@ -225,5 +233,42 @@ process processSTRs {
   jsat.str sortFragment --input ${sample_name}.fragment --output ${sample_name}.sorted.fragment
   jsat.str fragment2var --trfFile ${sample_name}.trf.str --output ${sample_name}.strv ${sample_name}.sorted.fragment
   jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.vcf --reference ${scaffolds}
+  """
+
+  stub:
+  str_vcf = "${sample_name}.vcf"
+  """
+  touch ${str_vcf}
+  """
+}
+
+process SNPEff {
+  /**
+  * Process STRs discovered by Tandem Repeats Finder using SNPEff
+  */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/STR", mode: 'copy', overwrite: 'true'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(str_vcf)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+  path("${sample_name}.ann.vcf"), emit: ann_vcf
+
+  script:
+  """
+  java -jar \$SNPEFF_DIR/snpEff.jar -c \$SNPEFF_DIR/snpEff.config ${sample_name} ${str_vcf} > ${sample_name}.ann.vcf
+  """
+
+  stub:
+  ann_vcf = "${sample_name}.ann.vcf"
+  """
+  touch ${ann_vcf}
   """
 }
