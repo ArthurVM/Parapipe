@@ -201,7 +201,7 @@ process abacas {
   tuple path(fasta), path(gff), path(cds), path(gaf)
 
   output:
-  path("${sample_name}.abacas.fasta"), emit: abacas_fasta
+  path("${sample_name}.ABACAS.fasta"), emit: abacas_fasta
   path("${sample_name}*.features.tab"), emit: features
   path("unused_contigs.out"), emit: unused_contigs
 
@@ -209,8 +209,8 @@ process abacas {
   mummer_module = "nucmer"
   ref_union="${fasta}.union"
   abacas_fasta="${scaffolds}_${fasta}.union.fasta"
-  crunch="${scaffolds}_${fasta}.union.fasta.crunch"
-  tab="${scaffolds}_${fasta}.union.fasta.tab"
+  crunch="${scaffolds}_${fasta}.union.crunch"
+  tab="${scaffolds}_${fasta}.union.tab"
   """
   perl \$ABACAS_DIR/joinMultifasta.pl ${fasta} ${fasta}.union
   perl \$ABACAS_DIR/abacas.1.3.1.pl -r ${ref_union} -q ${scaffolds} -p ${mummer_module}

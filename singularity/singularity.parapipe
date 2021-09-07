@@ -129,14 +129,14 @@ mkdir ABACAS \
 && cd ABACAS \
 && curl -fsSL https://sourceforge.net/projects/abacas/files/abacas.${abacas_version}.pl/download -o abacas.${abacas_version}.pl \
 && curl -fsSL ftp://ftp.sanger.ac.uk/pub/resources/software/pagit/PAGIT_MissingScripts.zip -o PAGIT_MissingScripts.zip \
-&& unzip PAGIT_MissingScripts.zip
+&& unzip PAGIT_MissingScripts.zip \
+&& cd ..
 
 curl -fsSL https://github.com/mummer4/mummer/releases/download/v4.0.0rc1/mummer-${mummer_version}.tar.gz | tar -xz \
 && cd mummer-${mummer_version} \
 && ./configure --prefix=/usr/local/ \
 && make \
 && make install \
-&& ldconfigc \
 && cd ..
 
 %environment

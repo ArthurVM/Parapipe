@@ -31,6 +31,9 @@ if ( params.genome == "" ) {
 if ( params.pattern == "" ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
+if ( ( params.ref_scaffold != "yes" ) && ( params.ref_scaffold != "no" ) ) {
+    exit 1, "error: --ref_scaffold is mandatory and must be either \"yes\" or \"no\"."
+}
 
 log.info """
 ========================================================================
@@ -42,6 +45,7 @@ Parameters used:
 --output_dir ${params.output_dir}
 --genome		${params.genome}
 --pattern		${params.pattern}
+--ref_scaffold  ${params.ref_scaffold}
 
 Runtime data:
 ------------------------------------------------------------------------
@@ -69,7 +73,7 @@ workflow {
 
     callSNPs(input_files, preprocessing.out.bam, prepRef.out.refdata)
 
-    assembly(input_files, preprocessing.out.trimmed_fqs, prepRef.out.refdata)
+    assembly(input_files, preprocessing.out.trimmed_fqs, params.ref_scaffold, prepRef.out.refdata)
 
     callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
 }

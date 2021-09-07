@@ -11,6 +11,7 @@ log.info"""
     --output_dir        output directory. Module output files will be written to subdirectories within this parent directory.
     --pattern           regex pattern to match pairs of fastq files.
     --genome            the ID of the reference genome to download and map against.
+    --ref_scaffold      perform reference driven scaffolding using ABACAS. NOTE: It is unadvised to use this if the reference is not arranged in complete chromosomes.
 
 
   Profiles:

@@ -15,6 +15,7 @@ workflow assembly {
     take:
       input_files
       trimmed_fqs
+      ref_scaffold
       refdata
 
     main:
@@ -28,9 +29,16 @@ workflow assembly {
 
       // pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
-      abacas(input_files, spades.out.scaffolds, refdata)
+      if ( ref_scaffold == "yes" ) {
+        // run ABACAS if reference guided scaffolding is requested
+        abacas(input_files, spades.out.scaffolds, refdata)
+        scaffolds_fasta = abacas.out.abacas_fasta
+      }
+      else {
+        scaffolds_fasta = spades.out.scaffolds
+      }
 
     emit:
       // pilon_fasta = pilon.out.pilon_fasta
-      fasta = abacas.out.abacas_fasta
+      fasta = scaffolds_fasta
 }
