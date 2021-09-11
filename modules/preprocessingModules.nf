@@ -47,7 +47,7 @@ process fastQC {
 
   errorStrategy 'ignore'
 
-  publishDir "${params.output_dir}/fastQC_reports", mode: 'copy'
+  publishDir "${params.output_dir}/${sample_name}/preprocessing", mode: 'copy'
 
   memory '5 GB'
 
