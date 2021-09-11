@@ -151,10 +151,8 @@ process pilon {
 
   tag { sample_name }
 
-  errorStrategy = {task.attempt <= 3 ? 'retry' : 'ignore'}
-  memory = {5 GB * task.attempt}
+  memory = '10 GB'
   cpus 4
-  maxRetries = 3
 
   publishDir "${params.output_dir}/$sample_name/Assembly/Pilon", mode: 'copy'
 
@@ -164,8 +162,8 @@ process pilon {
   path(scaffolds)
 
   output:
-  path("${sample_name}.fasta"), emit: pilon_fasta
-  path("${sample_name}.vcf"), emit: pilon_vcf
+  path("${sample_name}.pilon.fasta"), emit: pilon_fasta
+  path("${sample_name}.pilon.vcf"), emit: pilon_vcf
   path("pilon.log")
   path("pilon.err")
 
@@ -173,7 +171,7 @@ process pilon {
   pilon_stdout = "pilon.log"
   pilon_stderr = "pilon.err"
   """
-  java -jar /usr/local/bin/pilon-1.24.jar --genome ${scaffolds} --bam ${bam} --output ${sample_name} --vcf > ${pilon_stdout} 2> ${pilon_stderr}
+  java -jar /usr/local/bin/pilon-1.24.jar --genome ${scaffolds} --bam ${bam} --output ${sample_name}.pilon --vcf > ${pilon_stdout} 2> ${pilon_stderr}
   """
 
   stub:
@@ -215,6 +213,39 @@ process abacas {
   perl \$ABACAS_DIR/joinMultifasta.pl ${fasta} ${fasta}.union
   perl \$ABACAS_DIR/abacas.1.3.1.pl -r ${ref_union} -q ${scaffolds} -p ${mummer_module}
   perl \$ABACAS_DIR/splitABACASunion.pl ${fasta} ${ref_union} ${abacas_fasta} ${crunch} ${tab} ${sample_name}
+  """
+
+  stub:
+  """
+  """
+}
+
+process liftover {
+  /**
+  * Perform feature liftover using Liftoff
+  */
+
+  tag { sample_name }
+
+  memory = '10 GB'
+  cpus 1
+
+  publishDir "${params.output_dir}/$sample_name/Annotation", mode: 'copy'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(scaffolds)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+  path("${sample_name}.gff"), emit: gff
+  path("${sample_name}.gff_polished"), emit: gff_polished
+  path("unmapped_features.txt"), emit: unmapped_features
+
+  script:
+  """
+  python3 ${baseDir}/scripts/getFeatureIDs.py ${gff}
+  liftoff ${scaffolds} ${fasta} -g ${gff} -f featureset.txt -o ${sample_name}.gff -polish -cds -copies
   """
 
   stub:

@@ -77,3 +77,20 @@ workflow {
 
     callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
 }
+
+workflow.onComplete {
+    if ( workflow.success ) {
+        log.info """
+        ============================================
+        ${ANSI_GREEN}PARAPIPE completed successfully
+        """
+        .stripIndent()
+    }
+    else {
+        log.info """
+        ===========================================
+        ${ANSI_RED}Finished with errors${ANSI_RESET}
+        """
+        .stripIndent()
+    }
+}

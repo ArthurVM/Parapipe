@@ -22,7 +22,13 @@ workflow preprocessing {
 
       fastQC(input_files)
 
-      // multiQC(fastQC.out.fastQC_report.toList())
+      fq_reports = fastQC.out.fastQC_report.collect()
+
+      multiQC(fq_reports)
+
+      // Channel
+      //   .from(fastQC(input_files))
+      //   .subscribe onComplete: multiQC("${params.output_dir}/fastQC_reports")
 
       trimGalore(input_files)
 

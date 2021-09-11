@@ -45,7 +45,9 @@ process fastQC {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/${sample_name}/fastQC", mode: 'copy'
+  errorStrategy 'ignore'
+
+  publishDir "${params.output_dir}/fastQC_reports", mode: 'copy'
 
   memory '5 GB'
 
@@ -77,20 +79,20 @@ process multiQC {
   * TODO: this doesn't work at all, I don't know why
   */
 
-  publishDir "${params.output_dir}/QC_reports", mode: 'copy'
+  publishDir "${params.output_dir}", mode: 'copy'
 
   memory '5 GB'
 
   input:
-  path(fastQC_reports)
+  path(fastqc_files)
 
   output:
-  path("fastqc_paths.txt", emit: multiQC_report)
+  path("multiqc_report.html", emit: multiQC_report)
 
   script:
   """
-  echo $fastQC_reports
-  echo ${fastQC_reports} >> fastqc_paths.txt
+  echo ${fastqc_files}
+  multiqc ./
   """
 }
 

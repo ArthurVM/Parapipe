@@ -86,6 +86,8 @@ curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}
 && cd .. \
 && rm -r fqtools-${fqtools_version}
 
+pip install networkx==2.5.1
+
 python3 -m pip install multiqc
 
 %environment

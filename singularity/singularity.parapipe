@@ -7,6 +7,7 @@ about.summary="parasite genomics pipeline container"
 %post
 
 python_version=3.6.5
+ujson_version=3.2.0
 bowtie2_version=2.3.4.1
 htslib_version=1.12
 samtools_version=1.12
@@ -15,6 +16,8 @@ spades_version=3.15.3
 pilon_version=1.24
 mummer_version=4.0.0rc1
 abacas_version=1.3.1
+minimap_version=2.22
+liftoff_version=1.6.1
 quast_version=5.0.2
 trf_version=4.09.1
 
@@ -30,7 +33,8 @@ apt-get update \
 && cd .. \
 && ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
 && ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
-&& pip3 install --upgrade pip
+&& pip3 install --upgrade pip \
+&& pip3 install ujson==${ujson_version}
 
 pip3 install biopython
 
@@ -79,6 +83,15 @@ mkdir ABACAS \
 && unzip PAGIT_MissingScripts.zip \
 && cd ..
 
+curl -fsSL https://github.com/lh3/minimap2/archive/refs/tags/v${minimap_version}.tar.gz | tar -xz \
+&& cd minimap2-${minimap_version} \
+&& make \
+&& mv minimap2 /usr/local/bin/ \
+&& cd ../ \
+&& rm -r minimap2-${minimap_version}
+
+pip install liftoff
+
 curl -fsSL https://downloads.sourceforge.net/project/quast/quast-${quast_version}.tar.gz | tar -xz \
 && cd quast-${quast_version} \
 && python3 ./setup.py install \
@@ -97,6 +110,10 @@ curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_v
 curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strviper.tar.gz\
 && tar -xzf strviper.tar.gz \
 && rm strviper.tar.gz
+
+git clone git://github.com/tanghaibao/jcvi.git \
+&& cd jcvi \
+&& pip install -e .
 
 %environment
 export htslib_version=1.12

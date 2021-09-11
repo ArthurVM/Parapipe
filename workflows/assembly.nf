@@ -8,6 +8,7 @@ include {indexAssembly} from '../modules/assemblyModules.nf'
 include {map2SPAdesFasta} from '../modules/assemblyModules.nf'
 include {pilon} from '../modules/assemblyModules.nf'
 include {abacas} from '../modules/assemblyModules.nf'
+include {liftover} from '../modules/assemblyModules.nf'
 
 // define workflow
 workflow assembly {
@@ -23,20 +24,22 @@ workflow assembly {
 
       quast(input_files, refdata, spades.out.scaffolds)
 
-      // indexAssembly(input_files, spades.out.scaffolds)
+      indexAssembly(input_files, spades.out.scaffolds)
 
-      // map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
+      map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
 
-      // pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
+      pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
       if ( ref_scaffold == "yes" ) {
         // run ABACAS if reference guided scaffolding is requested
-        abacas(input_files, spades.out.scaffolds, refdata)
+        abacas(input_files, pilon.out.pilon_fasta, refdata)
         scaffolds_fasta = abacas.out.abacas_fasta
       }
       else {
-        scaffolds_fasta = spades.out.scaffolds
+        scaffolds_fasta = pilon.out.pilon_fasta
       }
+
+      liftover(input_files, scaffolds_fasta, refdata)
 
     emit:
       // pilon_fasta = pilon.out.pilon_fasta
