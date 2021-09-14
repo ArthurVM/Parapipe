@@ -16,7 +16,7 @@ workflow assembly {
     take:
       input_files
       trimmed_fqs
-      ref_scaffold
+      ref_scaffold_bool
       refdata
 
     main:
@@ -30,7 +30,7 @@ workflow assembly {
 
       pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
-      if ( ref_scaffold == "yes" ) {
+      if ( ref_scaffold_bool == "yes" ) {
         // run ABACAS if reference guided scaffolding is requested
         abacas(input_files, pilon.out.pilon_fasta, refdata)
         scaffolds_fasta = abacas.out.abacas_fasta

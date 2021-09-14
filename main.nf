@@ -10,6 +10,16 @@ include {preprocessing} from './workflows/preprocessing.nf'
 include {callSNPs} from './workflows/varanalysis.nf'
 include {callSTRs} from './workflows/varanalysis.nf'
 include {assembly} from './workflows/assembly.nf'
+include {postAssemblyAnalysis} from './workflows/postAssemblyAnalysis.nf'
+
+/*
+ ANSI escape codes to allow colour-coded output messages
+ This code is from https://github.com/angelovangel
+ */
+
+ANSI_GREEN = "\033[1;32m"
+ANSI_RED   = "\033[1;31m"
+ANSI_RESET = "\033[0m"
 
 params.help = ""
 
@@ -67,13 +77,20 @@ workflow {
    .set{ input_files }
 
   main:
+    ref_scaffold_bool = params.ref_scaffold
     prepRef(params.genome)
 
     preprocessing(input_files, prepRef.out.ref_bt2index)
 
     callSNPs(input_files, preprocessing.out.bam, prepRef.out.refdata)
 
-    assembly(input_files, preprocessing.out.trimmed_fqs, params.ref_scaffold, prepRef.out.refdata)
+    assembly(input_files, preprocessing.out.trimmed_fqs, ref_scaffold_bool, prepRef.out.refdata)
+
+    assemblies_list = assembly.out.fasta.collect().toList()
+
+    if ( ref_scaffold_bool == "yes" ) {
+      postAssemblyAnalysis(assemblies_list, prepRef.out.refdata)
+    }
 
     callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
 }

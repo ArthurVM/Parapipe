@@ -26,10 +26,6 @@ workflow preprocessing {
 
       multiQC(fq_reports)
 
-      // Channel
-      //   .from(fastQC(input_files))
-      //   .subscribe onComplete: multiQC("${params.output_dir}/fastQC_reports")
-
       trimGalore(input_files)
 
       map2Ref(input_files, trimGalore.out.tg_fqs, ref_bt2index)
