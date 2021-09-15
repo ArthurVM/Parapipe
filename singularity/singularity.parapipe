@@ -20,6 +20,7 @@ minimap_version=2.22
 liftoff_version=1.6.1
 quast_version=5.0.2
 trf_version=4.09.1
+mauve_version=2015-02-13
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -107,13 +108,12 @@ curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_v
 && rm v${trf_version}.tar.gz \
 && rm -r TRF-${trf_version}
 
-curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strviper.tar.gz\
+curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strviper.tar.gz \
 && tar -xzf strviper.tar.gz \
 && rm strviper.tar.gz
 
-git clone git://github.com/tanghaibao/jcvi.git \
-&& cd jcvi \
-&& pip install -e .
+curl -fsSL http://darlinglab.org/mauve/snapshots/2015/2015-02-13/linux-x64/mauve_linux_snapshot_${mauve_version}.tar.gz | tar -xz \
+&& mv mauve_*_${mauve_version} mauve
 
 %environment
 export htslib_version=1.12
@@ -123,6 +123,7 @@ export ABACAS_DIR=/ABACAS/
 export LD_LIBRARY_PATH=/usr/local/lib
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
+export PATH=$PATH:/mauve/linux-x64/
 %runscript
 exec /bin/bash "$@"
 %startscript

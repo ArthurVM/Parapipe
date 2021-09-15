@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 from collections import defaultdict
 from Bio import SeqIO
 
@@ -28,9 +29,20 @@ def writeFastas(chrdict):
             for genome_id, seq in subdict.items():
                 fout.write(f">{genome_id}.{chr}\n{seq}\n")
 
-def main(genome_list):
+def parseArgs(args):
+    """ reads arguments and attempts to interpret as a literal, returns a list of assemblies
+    """
+    # TODO: God this is so horrible, need to find a nicer way to parse nextflow lists as arguments
+    if args[1].startswith("["):
+        return [i for i in re.split("[][, ]", args[1]) if i != ""]
+    else:
+        return args[1:]
+
+def main(args):
     """ main function
     """
+    genome_list = parseArgs(args)
+
     chrdict = defaultdict(dict)
 
     for genome in genome_list:
@@ -45,4 +57,4 @@ if __name__=="__main__":
         print("Please supply more than one assembly. USAGE: makeChromosomeFastas.py <A0> <A1> ... <An>")
         sys.exit(1)
     else:
-        main(sys.argv[1:])
+        main(sys.argv)

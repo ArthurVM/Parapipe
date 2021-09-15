@@ -86,7 +86,7 @@ workflow {
 
     assembly(input_files, preprocessing.out.trimmed_fqs, ref_scaffold_bool, prepRef.out.refdata)
 
-    assemblies_list = assembly.out.fasta.collect().toList()
+    assemblies_list = assembly.out.fasta.collect()
 
     if ( ref_scaffold_bool == "yes" ) {
       postAssemblyAnalysis(assemblies_list, prepRef.out.refdata)

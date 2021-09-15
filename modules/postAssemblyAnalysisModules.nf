@@ -8,7 +8,7 @@ process makeChromosomeFastas {
   memory '5 GB'
 
   input:
-  tuple val(assemblies)
+  val(assemblies)
   tuple path(fasta), path(gff), path(cds), path(gaf)
 
   output:
@@ -24,17 +24,15 @@ process makeChromosomeFastas {
 
 process chromosomeAlignment {
   /**
-  * Run spades assembly on preprocessed reads
+  * Align chromosomes using preogressiveMauve
   */
-  tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/Assembly", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/ChrAln", mode: 'copy', overwrite: 'true'
 
-  cpus 8
-  memory '15 GB'
+  memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  path()
 
   output:
   path("scaffolds.fasta"), emit: scaffolds
