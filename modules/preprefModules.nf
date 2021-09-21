@@ -27,7 +27,16 @@ process downloadRefData {
   cds_fasta = "${genome_id}_cds.fasta"
 
   """
-  touch $fasta
+  echo ">chr0
+  ATCG
+  >chr1
+  ATCG
+  >chr2
+  ATCG
+  >chr3
+  ATCG
+  >chr4
+  ATCG" >> ${fasta}
   touch $gff
   touch $gaf
   touch $cds_fasta

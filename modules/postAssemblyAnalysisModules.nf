@@ -8,7 +8,7 @@ process makeChromosomeFastas {
   memory '5 GB'
 
   input:
-  val(assemblies)
+  path(assemblies)
   tuple path(fasta), path(gff), path(cds), path(gaf)
 
   output:
@@ -18,12 +18,12 @@ process makeChromosomeFastas {
   script:
   """
   echo ${assemblies}
-  python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies}
+  python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies} ${fasta}
   """
 
   stub:
   """
-  touch {chr0,chr1,chr2,chr3,chr4}.fasta
+  python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies} ${fasta}
   """
 }
 

@@ -220,7 +220,16 @@ process abacas {
   features="${sample_name}_{chr0,chr1,chr2,chr3,chr4}.features.tab"
   unused_contigs="unused_contigs.out"
   """
-  touch ${abacas_fasta}
+  echo ">chr0
+  ATCG
+  >chr1
+  ATCG
+  >chr2
+  ATCG
+  >chr3
+  ATCG
+  >chr4
+  ATCG" >> ${abacas_fasta}
   touch ${features}
   touch ${unused_contigs}
   """
