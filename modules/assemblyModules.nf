@@ -65,6 +65,7 @@ process quast {
   touch quast.log
   touch report.{html,tex,tsv,txt}
   touch transposed_report.{tex,tsv,txt}
+  touch contigs_reports
   mkdir {aligned,basic,genome}_stats
   """
 }
@@ -94,10 +95,8 @@ process indexAssembly {
   """
 
   stub:
-  bt2_index = "./${params.genome}"
-
   """
-  mkdir ${bt2_index}
+  mkdir ${sample_name}
   """
 }
 
@@ -176,8 +175,9 @@ process pilon {
 
   stub:
   """
-  touch ${sample_name}.fasta
-  touch ${sample_name}.vcf
+  touch ${sample_name}.pilon.fasta
+  touch ${sample_name}.pilon.vcf
+  touch pilon.{log,err}
   """
 }
 
@@ -216,7 +216,13 @@ process abacas {
   """
 
   stub:
+  abacas_fasta="${sample_name}.ABACAS.fasta"
+  features="${sample_name}_{chr0,chr1,chr2,chr3,chr4}.features.tab"
+  unused_contigs="unused_contigs.out"
   """
+  touch ${abacas_fasta}
+  touch ${features}
+  touch ${unused_contigs}
   """
 }
 
@@ -249,6 +255,11 @@ process liftover {
   """
 
   stub:
+  gff="${sample_name}.gff"
+  gff_polished="${sample_name}.gff_polished"
   """
+  touch ${gff}
+  touch ${gff_polished}
+  touch unmapped_features.txt
   """
 }

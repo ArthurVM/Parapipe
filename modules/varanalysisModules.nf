@@ -63,7 +63,7 @@ process preprocessForPlotting {
 
   stub:
   """
-  touch tmp_descStripped.fasta
+  touch tmp.descStripped.fasta
   mkdir vcf_split
   """
 }
@@ -134,6 +134,7 @@ process findSTRs {
   trf_dat = "${scaffolds}.2.7.7.80.10.50.500.dat"
   """
   touch ${trf_dat}
+  touch trf.{stdout,stderr}
   """
 }
 

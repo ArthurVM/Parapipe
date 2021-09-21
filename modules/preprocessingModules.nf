@@ -94,6 +94,12 @@ process multiQC {
   echo ${fastqc_files}
   multiqc ./
   """
+
+  stub:
+  multiQC_report="multiqc_report.html"
+  """
+  touch ${multiQC_report}
+  """
 }
 
 process trimGalore {
@@ -254,5 +260,11 @@ process gini {
   """
   samtools depth -a ${bam} > ${sample_name}.doc.bed
   python3 /NGS-Gini-Analysis-Toolkit-0.1-alpha/src/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
+  """
+
+  stub:
+  gg_file = "${sample_name}.GG"
+  """
+  touch ${gg_file}
   """
 }

@@ -12,7 +12,8 @@ process makeChromosomeFastas {
   tuple path(fasta), path(gff), path(cds), path(gaf)
 
   output:
-  path("*fasta"), emit: chromosome_fastas
+  // val("\$PWD"), emit: wd
+  path("*fasta"), emit: chr_multifastas
 
   script:
   """
@@ -20,6 +21,10 @@ process makeChromosomeFastas {
   python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies}
   """
 
+  stub:
+  """
+  touch {chr0,chr1,chr2,chr3,chr4}.fasta
+  """
 }
 
 process chromosomeAlignment {
@@ -32,20 +37,34 @@ process chromosomeAlignment {
   memory '5 GB'
 
   input:
-  path()
+  path(chr_multifastas)
 
   output:
-  path("scaffolds.fasta"), emit: scaffolds
-  path("spades.log"), emit: log
+  path("*xmfa"), emit: xmfa
 
   script:
   """
-  spades.py -1 ${trimmed_fq1} -2 ${trimmed_fq2} --careful --cov-cutoff auto -k auto --threads ${task.cpus} --memory 15 -o ./
+  chr_mfs="${chr_multifastas}"
+  IFS=', ' read -r -a chr_mf_array <<< "\${chr_mfs}"
+  for chr in \${chr_mf_array[@]}
+  do
+    echo \$chr
+    fname="\${chr##*/}"
+    chrID="\${fname%.*}"
+    progressiveMauve --output=\${chrID}.xmfa \$chr
+  done
   """
 
   stub:
   """
-  touch scaffolds.fasta
-  touch spades.log
+  chr_mfs="${chr_multifastas}"
+  IFS=', ' read -r -a chr_mf_array <<< "\${chr_mfs}"
+  for chr in \${chr_mf_array[@]}
+  do
+    fname="\${chr##*/}"
+    chrID="\${fname%.*}"
+    echo "progressiveMauve --output=\${chrID}.xmfa \$chr"
+    touch \${chrID}.xmfa
+  done
   """
 }
