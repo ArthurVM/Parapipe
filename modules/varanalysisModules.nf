@@ -233,13 +233,47 @@ process STRViper {
   jsat.str sam2fragment --input ${bam} --output ${sample_name}.fragment
   jsat.str sortFragment --input ${sample_name}.fragment --output ${sample_name}.sorted.fragment
   jsat.str fragment2var --trfFile ${sample_name}.trf.str --output ${sample_name}.strv ${sample_name}.sorted.fragment
-  jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.vcf --reference ${scaffolds}
+  jsat.str strv2vcf --input ${sample_name}.strv --output ${sample_name}.tmp.vcf --reference ${scaffolds}
+  cat ${sample_name}.tmp.vcf | cut -d\$\'\\t\' -f-8 > ${sample_name}.vcf
   """
 
   stub:
   str_vcf = "${sample_name}.vcf"
   """
   touch ${str_vcf}
+  """
+}
+
+process plotSTR {
+  /**
+  * Plot STRs across each chromosome
+  */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/STR", mode: 'copy', overwrite: 'true'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(vcf_path)
+  path(preprocessed_fasta)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+  path("STRDist.pdf"), emit: pdf
+
+  script:
+  scripts = "${workflow.launchDir}/scripts"
+  """
+  echo "Creating plots..."
+  Rscript ${scripts}/SNPdist.R -v ${vcf_path} -f ${preprocessed_fasta} -g ${gff}
+  """
+
+  stub:
+  """
+  touch STRDist.pdf
   """
 }
 

@@ -32,7 +32,7 @@ process chromosomeAlignment {
   * Align chromosomes using preogressiveMauve
   */
 
-  publishDir "${params.output_dir}/ChrAln", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/ChrAln", mode: 'copy', pattern: '*xmfa', overwrite: 'true'
 
   memory '5 GB'
 
@@ -41,6 +41,7 @@ process chromosomeAlignment {
 
   output:
   path("*xmfa"), emit: xmfa
+  path("*.maln.map"), emit: maln_maps
 
   script:
   """
@@ -52,6 +53,7 @@ process chromosomeAlignment {
     fname="\${chr##*/}"
     chrID="\${fname%.*}"
     progressiveMauve --output=\${chrID}.xmfa \$chr
+    grep \">\" \$chr | cat -n | sed -e \"s/>//g\" | awk \'{{split(\$0, a ,\" \");print (a[1]\" \"a[2])}}\' > \${chrID}.maln.map
   done
   """
 
@@ -65,6 +67,7 @@ process chromosomeAlignment {
     chrID="\${fname%.*}"
     echo "progressiveMauve --output=\${chrID}.xmfa \$chr"
     touch \${chrID}.xmfa
+    grep \">\" \$chr | cat -n | sed -e \"s/>//g\" | awk \'{{split(\$0, a ,\" \");print (a[1]\" \"a[2])}}\' > \${chrID}.maln.map
   done
   """
 }
