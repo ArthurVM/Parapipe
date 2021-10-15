@@ -34,7 +34,7 @@ process chromosomeAlignment {
 
   publishDir "${params.output_dir}/ChrAln", mode: 'copy', pattern: '*xmfa', overwrite: 'true'
 
-  memory '5 GB'
+  memory '15 GB'
 
   input:
   path(chr_multifastas)

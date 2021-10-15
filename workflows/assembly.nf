@@ -24,19 +24,19 @@ workflow assembly {
 
       quast(input_files, refdata, spades.out.scaffolds)
 
-      indexAssembly(input_files, spades.out.scaffolds)
-
-      map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
-
-      pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
+      // Pilon exhibiting unstable behaviour
+      // removed for the time being
+      // indexAssembly(input_files, spades.out.scaffolds)
+      // map2SPAdesFasta(input_files, trimmed_fqs, indexAssembly.out.bt2_index)
+      // pilon(input_files, map2SPAdesFasta.out.bam, spades.out.scaffolds)
 
       if ( ref_scaffold_bool == "yes" ) {
         // run ABACAS if reference guided scaffolding is requested
-        abacas(input_files, pilon.out.pilon_fasta, refdata)
+        abacas(input_files, spades.out.scaffolds, refdata)
         scaffolds_fasta = abacas.out.abacas_fasta
       }
       else {
-        scaffolds_fasta = pilon.out.pilon_fasta
+        scaffolds_fasta = spades.out.scaffolds
       }
 
       liftover(input_files, scaffolds_fasta, refdata)

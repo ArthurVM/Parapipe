@@ -9,9 +9,11 @@ aligns orthogroups
 import sys
 import argparse
 import subprocess
+from utilities import *
 from collections import defaultdict
 from os import path, listdir, walk
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 def createOrthogroups(cdslibs):
 
@@ -28,13 +30,35 @@ def createOrthogroups(cdslibs):
 
 def makeOrthoMultifastas(gene, libdict):
 
-    orthofasta = f"tmp.{gene}.fa"
-    with open(orthofasta, "w") as fout:
-        for assemblyID, rec in libdict.items():
-            recline = f">{assemblyID} | {rec.description}\n{rec.seq}\n"
-            fout.write(recline)
+    orthofastaN = f"tmp.{gene}.fa"
+    orthofastaA = f"tmp.{gene}.faa"
 
-    return orthofasta
+    ## lists for storing fasta sequences for writing to file, allowing a check of the number of sequences
+    writeboxN = []
+    writeboxAA = []
+
+    with open(orthofastaN, "w") as foutN, open(orthofastaA, "w") as foutA:
+        for assemblyID, rec in libdict.items():
+            ## check for nspace
+            # nspace = 100.0/len(rec.seq)*rec.seq.count("N")
+            nspace = rec.seq.count("N")
+            if nspace >= 1:
+                print(f"nspace exceeds threshold in {gene} {assemblyID} : {nspace}")
+                continue
+
+            recline = f">{assemblyID} | {rec.description}\n{rec.seq}"
+            writeboxN.append(recline)
+            recline = f">{assemblyID} | {rec.description}\n{rec.seq.translate()}\n"
+            writeboxAA.append(recline)
+
+        if len(writeboxN)>1:
+            foutN.write("\n".join(writeboxN))
+            foutA.write("\n".join(writeboxAA))
+            return orthofastaN
+
+        else:
+            print(f"Not enough sequences to align in {gene}. Skipping...")
+            return None
 
 def alignOrthos(orthodict):
     """ Align orthologs for dNdS analysis
@@ -45,25 +69,17 @@ def alignOrthos(orthodict):
     for gene, libdict in orthodict.items():
         orthofasta = makeOrthoMultifastas(gene, libdict)
 
-        outfile = path.splitext(orthofasta)[0]
+        ## check there are enough genes to align
+        if orthofasta == None:
+            continue
+
+        outfile = path.splitext(orthofasta)[0   ]
         outfile_box.append(outfile)
 
-        runline = f"clustalw2 -INFILE={orthofasta} -ALIGN -TYPE=DNA -OUTPUT=FASTA -OUTFILE={outfile}.aln.fa"
-        subprocess.run(runline, shell=True, check=True)
+        runline = f"clustalw2 -INFILE={orthofasta} -ALIGN -TYPE=DNA -OUTPUT=FASTA -OUTPUTTREE=nexus -OUTFILE={outfile}.aln.fa"
+        command(runline).run_comm(0)
 
     return outfile_box
-
-def is_file(filename):
-    """ Checks if a path is a file """
-
-    if not path.isfile(filename):
-        time=strftime("%H:%M:%S", localtime())
-        print("{time} :: No file found at {f}".format(
-                time=time,
-                f=filename), end="\n", file=sys.stderr, flush=True)
-        exit(3)
-    else:
-        return path.abspath(path.realpath(path.expanduser(filename)))
 
 def gen_argparser(argv):
 

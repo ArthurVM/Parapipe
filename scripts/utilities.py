@@ -1,8 +1,7 @@
 """ A set of utility functions and classes.
 """
 
-from os import kill
-import os
+from os import kill, path
 import sys
 from signal import alarm, signal, SIGALRM, SIGKILL
 from subprocess import PIPE, Popen
@@ -90,3 +89,23 @@ class command():
 	         stdout = PIPE, stderr = PIPE)
         stdout, stderr = p.communicate()
         return [int(p) for p in stdout.split()]
+
+def is_file(filename):
+    """ Checks if a path is a file """
+
+    if not path.isfile(filename):
+        print("No file found at {f}".format(
+                time=time, f=filename), end="\n", file=sys.stderr, flush=True)
+        exit(2)
+    else:
+        return path.abspath(path.realpath(path.expanduser(filename)))
+
+def is_dir(dirname):
+    """ Checks if a path is a directory """
+
+    if not path.isdir(dirname):
+        print("No directory found at {d}".format(
+                time=time, d=dirname), end="\n", file=sys.stderr, flush=True)
+        exit(2)
+    else:
+        return path.abspath(path.realpath(path.expanduser(dirname)))
