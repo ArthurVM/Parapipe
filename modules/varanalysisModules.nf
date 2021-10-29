@@ -7,7 +7,8 @@ process findSNPs {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.var.vcf'
+  publishDir "${params.output_dir}/GVCFs", mode: 'copy', overwrite: 'true', pattern: '*.gvcf'
 
   memory '5 GB'
 
@@ -18,11 +19,14 @@ process findSNPs {
 
   output:
   path("${sample_name}.var.vcf"), emit: vcf
+  path("${sample_name}.gvcf.gz"), emit: gvcf
 
   script:
   error_log = "${sample_name}.err"
 
   """
+  bcftools mpileup -Ov --gvcf 0 --skip-indels -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m --gvcf 0 -o ${sample_name}.gvcf
+  bgzip ${sample_name}.gvcf
   samtools mpileup --skip-indels --BCF -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m -O v --variants-only -o ${sample_name}.var.vcf -
   """
 
@@ -31,6 +35,7 @@ process findSNPs {
 
   """
   touch ${sample_name}.var.vcf
+  touch ${sample_name}.gvcf
   """
 }
 

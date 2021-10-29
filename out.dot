@@ -1,0 +1,334 @@
+digraph "out" {
+p0 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.fromFilePairs"];
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p0 -> p1;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p8 [label="preprocessing:checkFqValidity"];
+p1 -> p8 [label="input_files"];
+
+p2 [shape=point,label="",fixedsize=true,width=0.1];
+p3 [label="prepRef:downloadRefData"];
+p2 -> p3 [label="genome_id"];
+
+p3 [label="prepRef:downloadRefData"];
+p5 [label="prepRef:indexRefData"];
+p3 -> p5 [label="refdata"];
+
+p4 [shape=point,label="",fixedsize=true,width=0.1];
+p5 [label="prepRef:indexRefData"];
+p4 -> p5 [label="genome_id"];
+
+p5 [label="prepRef:indexRefData"];
+p17 [label="preprocessing:map2Ref"];
+p5 -> p17 [label="ref_bt2index"];
+
+p5 [label="prepRef:indexRefData"];
+p7 [shape=point];
+p5 -> p7 [label="ref_fai"];
+
+p5 [label="prepRef:indexRefData"];
+p6 [shape=point];
+p5 -> p6 [label="ref_dict"];
+
+p8 [label="preprocessing:checkFqValidity"];
+p10 [shape=point];
+p8 -> p10;
+
+p8 [label="preprocessing:checkFqValidity"];
+p9 [shape=point];
+p8 -> p9;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p11 [label="preprocessing:fastQC"];
+p1 -> p11 [label="input_files"];
+
+p11 [label="preprocessing:fastQC"];
+p12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p11 -> p12;
+
+p12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p13 [label="preprocessing:multiQC"];
+p12 -> p13 [label="fq_reports"];
+
+p13 [label="preprocessing:multiQC"];
+p14 [shape=point];
+p13 -> p14;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p15 [label="preprocessing:trimGalore"];
+p1 -> p15 [label="input_files"];
+
+p15 [label="preprocessing:trimGalore"];
+p16 [shape=point];
+p15 -> p16;
+
+p15 [label="preprocessing:trimGalore"];
+p17 [label="preprocessing:map2Ref"];
+p15 -> p17 [label="trimmed_fqs"];
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p17 [label="preprocessing:map2Ref"];
+p1 -> p17 [label="input_files"];
+
+p17 [label="preprocessing:map2Ref"];
+p19 [label="preprocessing:deduplication"];
+p17 -> p19 [label="bam"];
+
+p17 [label="preprocessing:map2Ref"];
+p18 [shape=point];
+p17 -> p18;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p19 [label="preprocessing:deduplication"];
+p1 -> p19 [label="input_files"];
+
+p19 [label="preprocessing:deduplication"];
+p21 [shape=point];
+p19 -> p21;
+
+p19 [label="preprocessing:deduplication"];
+p20 [shape=point];
+p19 -> p20;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p22 [label="preprocessing:gini"];
+p1 -> p22 [label="input_files"];
+
+p17 [label="preprocessing:map2Ref"];
+p22 [label="preprocessing:gini"];
+p17 -> p22 [label="bam"];
+
+p22 [label="preprocessing:gini"];
+p23 [shape=point];
+p22 -> p23;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p24 [label="callSNPs:findSNPs"];
+p1 -> p24 [label="input_files"];
+
+p17 [label="preprocessing:map2Ref"];
+p24 [label="callSNPs:findSNPs"];
+p17 -> p24 [label="bam"];
+
+p3 [label="prepRef:downloadRefData"];
+p24 [label="callSNPs:findSNPs"];
+p3 -> p24 [label="refdata"];
+
+p24 [label="callSNPs:findSNPs"];
+p25 [label="callSNPs:preprocessForPlotting"];
+p24 -> p25;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p25 [label="callSNPs:preprocessForPlotting"];
+p1 -> p25 [label="input_files"];
+
+p3 [label="prepRef:downloadRefData"];
+p25 [label="callSNPs:preprocessForPlotting"];
+p3 -> p25 [label="refdata"];
+
+p25 [label="callSNPs:preprocessForPlotting"];
+p26 [label="callSNPs:plotSNP"];
+p25 -> p26;
+
+p25 [label="callSNPs:preprocessForPlotting"];
+p26 [label="callSNPs:plotSNP"];
+p25 -> p26;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p26 [label="callSNPs:plotSNP"];
+p1 -> p26 [label="input_files"];
+
+p3 [label="prepRef:downloadRefData"];
+p26 [label="callSNPs:plotSNP"];
+p3 -> p26 [label="refdata"];
+
+p26 [label="callSNPs:plotSNP"];
+p27 [shape=point];
+p26 -> p27;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p28 [label="assembly:spades"];
+p1 -> p28 [label="input_files"];
+
+p15 [label="preprocessing:trimGalore"];
+p28 [label="assembly:spades"];
+p15 -> p28 [label="trimmed_fqs"];
+
+p28 [label="assembly:spades"];
+p30 [label="assembly:quast"];
+p28 -> p30;
+
+p28 [label="assembly:spades"];
+p29 [shape=point];
+p28 -> p29;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p30 [label="assembly:quast"];
+p1 -> p30 [label="input_files"];
+
+p3 [label="prepRef:downloadRefData"];
+p30 [label="assembly:quast"];
+p3 -> p30 [label="refdata"];
+
+p30 [label="assembly:quast"];
+p36 [shape=point];
+p30 -> p36;
+
+p30 [label="assembly:quast"];
+p35 [shape=point];
+p30 -> p35;
+
+p30 [label="assembly:quast"];
+p34 [shape=point];
+p30 -> p34;
+
+p30 [label="assembly:quast"];
+p33 [shape=point];
+p30 -> p33;
+
+p30 [label="assembly:quast"];
+p32 [shape=point];
+p30 -> p32;
+
+p30 [label="assembly:quast"];
+p31 [shape=point];
+p30 -> p31;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p37 [label="assembly:abacas"];
+p1 -> p37 [label="input_files"];
+
+p28 [label="assembly:spades"];
+p37 [label="assembly:abacas"];
+p28 -> p37 [label="scaffolds"];
+
+p3 [label="prepRef:downloadRefData"];
+p37 [label="assembly:abacas"];
+p3 -> p37 [label="refdata"];
+
+p37 [label="assembly:abacas"];
+p40 [label="assembly:liftover"];
+p37 -> p40 [label="scaffolds"];
+
+p37 [label="assembly:abacas"];
+p39 [shape=point];
+p37 -> p39;
+
+p37 [label="assembly:abacas"];
+p38 [shape=point];
+p37 -> p38;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p40 [label="assembly:liftover"];
+p1 -> p40 [label="input_files"];
+
+p3 [label="prepRef:downloadRefData"];
+p40 [label="assembly:liftover"];
+p3 -> p40 [label="refdata"];
+
+p40 [label="assembly:liftover"];
+p42 [shape=point];
+p40 -> p42 [label="gff"];
+
+p40 [label="assembly:liftover"];
+p44 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p40 -> p44 [label="gff_polished"];
+
+p40 [label="assembly:liftover"];
+p41 [shape=point];
+p40 -> p41;
+
+p37 [label="assembly:abacas"];
+p43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p37 -> p43 [label="scaffolds"];
+
+p43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p45 [label="postAssemblyAnalysis:makeChromosomeFastas"];
+p43 -> p45 [label="assemblies"];
+
+p44 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p49 [label="postAssemblyAnalysis:dNdS"];
+p44 -> p49 [label="annotations"];
+
+p3 [label="prepRef:downloadRefData"];
+p45 [label="postAssemblyAnalysis:makeChromosomeFastas"];
+p3 -> p45 [label="refdata"];
+
+p45 [label="postAssemblyAnalysis:makeChromosomeFastas"];
+p46 [label="postAssemblyAnalysis:chromosomeAlignment"];
+p45 -> p46;
+
+p46 [label="postAssemblyAnalysis:chromosomeAlignment"];
+p48 [shape=point];
+p46 -> p48;
+
+p46 [label="postAssemblyAnalysis:chromosomeAlignment"];
+p47 [shape=point];
+p46 -> p47;
+
+p43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+p49 [label="postAssemblyAnalysis:dNdS"];
+p43 -> p49 [label="assemblies"];
+
+p3 [label="prepRef:downloadRefData"];
+p49 [label="postAssemblyAnalysis:dNdS"];
+p3 -> p49 [label="refdata"];
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p50 [label="callSTRs:findSTRs"];
+p1 -> p50 [label="input_files"];
+
+p37 [label="assembly:abacas"];
+p50 [label="callSTRs:findSTRs"];
+p37 -> p50 [label="scaffolds"];
+
+p50 [label="callSTRs:findSTRs"];
+p51 [shape=point];
+p50 -> p51;
+
+p50 [label="callSTRs:findSTRs"];
+p55 [label="callSTRs:STRViper"];
+p50 -> p55;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p52 [label="callSTRs:indexScaffolds"];
+p1 -> p52 [label="input_files"];
+
+p37 [label="assembly:abacas"];
+p52 [label="callSTRs:indexScaffolds"];
+p37 -> p52 [label="scaffolds"];
+
+p52 [label="callSTRs:indexScaffolds"];
+p53 [label="callSTRs:map2Scaffolds"];
+p52 -> p53;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p53 [label="callSTRs:map2Scaffolds"];
+p1 -> p53 [label="input_files"];
+
+p15 [label="preprocessing:trimGalore"];
+p53 [label="callSTRs:map2Scaffolds"];
+p15 -> p53 [label="trimmed_fqs"];
+
+p53 [label="callSTRs:map2Scaffolds"];
+p55 [label="callSTRs:STRViper"];
+p53 -> p55;
+
+p53 [label="callSTRs:map2Scaffolds"];
+p54 [shape=point];
+p53 -> p54;
+
+p1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+p55 [label="callSTRs:STRViper"];
+p1 -> p55 [label="input_files"];
+
+p37 [label="assembly:abacas"];
+p55 [label="callSTRs:STRViper"];
+p37 -> p55 [label="scaffolds"];
+
+p55 [label="callSTRs:STRViper"];
+p56 [shape=point];
+p55 -> p56;
+
+}

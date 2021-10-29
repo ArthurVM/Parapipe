@@ -17,7 +17,7 @@ process checkFqValidity {
   tuple val(sample_name), path(fq1), path(fq2)
 
   output:
-  tuple val(sample_name), path(fq1), path(fq2), stdout, emit: checkValidity_fqs
+  tuple val(sample_name), path(fq1), path(fq2), emit: checkValidity_fqs
   path("${sample_name}.err", emit: checkValidity_log)
 
   script:
@@ -107,8 +107,6 @@ process trimGalore {
   * run trimGalore on fastq pair
   */
   tag { sample_name }
-
-  errorStrategy 'ignore'
 
   publishDir "${params.output_dir}/$sample_name/preprocessing/Trim", mode: 'copy'
 

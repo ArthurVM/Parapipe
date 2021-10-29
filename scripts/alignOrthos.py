@@ -15,6 +15,28 @@ from os import path, listdir, walk
 from Bio import SeqIO
 from Bio.Seq import Seq
 
+def seqQC(rec, gene, assemblyID):
+    """ quality control sequences, involving:
+    - screening out sequences with N space
+    - screening out sequences which do not start with a start codon
+    - screening out sequences which to not terminate with a stop codon
+    """
+    nspace = rec.seq.count("N")
+    if nspace >= 1:
+        print(f"nspace exceeds threshold in {gene} {assemblyID} : {nspace}")
+        return False
+
+    aa_seq = rec.seq.translate()
+    if aa_seq[0] != "M":
+        print(f"Methionine start codon not detected in {gene} {assemblyID}")
+        return False
+
+    if aa_seq[-1] != "*":
+        print(f"Stop codon not detected in {gene} {assemblyID}")
+        return False
+
+    return True
+
 def createOrthogroups(cdslibs):
 
     orthodict = defaultdict(dict)
@@ -39,14 +61,12 @@ def makeOrthoMultifastas(gene, libdict):
 
     with open(orthofastaN, "w") as foutN, open(orthofastaA, "w") as foutA:
         for assemblyID, rec in libdict.items():
-            ## check for nspace
-            # nspace = 100.0/len(rec.seq)*rec.seq.count("N")
-            nspace = rec.seq.count("N")
-            if nspace >= 1:
-                print(f"nspace exceeds threshold in {gene} {assemblyID} : {nspace}")
+
+            if not seqQC(rec, gene, assemblyID):
                 continue
 
-            recline = f">{assemblyID} | {rec.description}\n{rec.seq}"
+            ## strip out stop codon from nucleotide fasta
+            recline = f">{assemblyID} | {rec.description}\n{rec.seq[:-3]}"
             writeboxN.append(recline)
             recline = f">{assemblyID} | {rec.description}\n{rec.seq.translate()}\n"
             writeboxAA.append(recline)

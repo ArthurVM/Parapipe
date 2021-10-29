@@ -52,6 +52,7 @@ process chromosomeAlignment {
     echo \$chr
     fname="\${chr##*/}"
     chrID="\${fname%.*}"
+    echo "progressiveMauve --output=\${chrID}.xmfa \$chr"
     progressiveMauve --output=\${chrID}.xmfa \$chr
     grep \">\" \$chr | cat -n | sed -e \"s/>//g\" | awk \'{{split(\$0, a ,\" \");print (a[1]\" \"a[2])}}\' > \${chrID}.maln.map
   done
@@ -69,5 +70,32 @@ process chromosomeAlignment {
     touch \${chrID}.xmfa
     grep \">\" \$chr | cat -n | sed -e \"s/>//g\" | awk \'{{split(\$0, a ,\" \");print (a[1]\" \"a[2])}}\' > \${chrID}.maln.map
   done
+  """
+}
+
+process dNdS {
+  /**
+  * Aligns orthologs and calculates selection pressure for each gene
+  */
+
+  memory '10 GB'
+
+  input:
+  path(assemblies)
+  path(annotations)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+
+  output:
+
+  script:
+  """
+  python3 ${baseDir}/scripts/gff2protein.py -g ${annotations} -f ${assemblies} -id gene
+  python3 ${baseDir}/scripts/alignOrthos.py ./*-cdna.fa
+  """
+
+  stub:
+  """
+  echo "python3 ${baseDir}/scripts/gff2protein.py -g ${annotations} -f ${assemblies} -id gene"
+  echo "python3 ${baseDir}/scripts/alignOrthos.py ./*-cdna.fa"
   """
 }

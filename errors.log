@@ -1,0 +1,9 @@
+
+Error:Could not find source dataset file "PROMPT_FOR_FILE" (resolved to '/home/amorris/BioInf/Parapipe/All')
+Path stack:
+	/home/amorris/software/anaconda3/share/hyphy/
+	/home/amorris/software/anaconda3/share/hyphy/TemplateBatchFiles/SelectionAnalyses/
+Could not find source dataset file "PROMPT_FOR_FILE" (resolved to '/home/amorris/BioInf/Parapipe/All')
+Path stack:
+	/home/amorris/software/anaconda3/share/hyphy/
+	/home/amorris/software/anaconda3/share/hyphy/TemplateBatchFiles/SelectionAnalyses/

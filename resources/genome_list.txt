@@ -1,24 +1,8 @@
-cryptosporidium_hominis
-cryptosporidium_muris
-cryptosporidium_meleagridis
-cryptosporidium_parvum
-plasmodium_falciparum
-plasmodium_falciparum_3D7
-plasmodium_falciparum_7G8
-plasmodium_falciparum_CD01
-plasmodium_falciparum_Dd2
-plasmodium_falciparum_GA01
-plasmodium_falciparum_GB4
-plasmodium_falciparum_GN01
-plasmodium_falciparum_HB3
-plasmodium_falciparum_IT
-plasmodium_falciparum_KE01
-plasmodium_falciparum_KH01
-plasmodium_falciparum_KH02
-plasmodium_falciparum_ML01
-plasmodium_falciparum_SD01
-plasmodium_falciparum_SN01
-plasmodium_falciparum_TG01
-plasmodium_knowlesi
-plasmodium_malariae
-plasmodium_vivax
+FTP	cryptosporidium_hominis	https://cryptodb.org/common/downloads/Current_Release/ChominisUdeA01	protein_coding_gene
+FTP	cryptosporidium_muris	https://cryptodb.org/common/downloads/Current_Release/CmurisRN66	protein_coding_gene
+FTP	cryptosporidium_meleagridis	https://cryptodb.org/common/downloads/Current_Release/CmeleagridisUKMEL1	protein_coding_gene
+FTP	cryptosporidium_parvum	https://cryptodb.org/common/downloads/Current_Release/CparvumIOWA-ATCC	protein_coding_gene
+FTP	plasmodium_falciparum	https://plasmodb.org/common/downloads/Current_Release/Pfalciparum3D7	protein_coding_gene
+FTP	plasmodium_knowlesi	https://plasmodb.org/common/downloads/Current_Release/PknowlesiA1H1	protein_coding_gene
+FTP	plasmodium_malariae	https://plasmodb.org/common/downloads/Current_Release/PmalariaeUG01	protein_coding_gene
+FTP	plasmodium_vivax	https://plasmodb.org/common/downloads/Current_Release/PvivaxP01	protein_coding_gene

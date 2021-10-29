@@ -87,9 +87,10 @@ workflow {
     assembly(input_files, preprocessing.out.trimmed_fqs, ref_scaffold_bool, prepRef.out.refdata)
 
     assemblies_list = assembly.out.fasta.collect()
+    annotations_list = assembly.out.gff_polished.collect()
 
     if ( ref_scaffold_bool == "yes" ) {
-      postAssemblyAnalysis(assemblies_list, prepRef.out.refdata)
+      postAssemblyAnalysis(assemblies_list, annotations_list, prepRef.out.refdata)
     }
 
     callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)

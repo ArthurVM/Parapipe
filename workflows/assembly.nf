@@ -44,4 +44,6 @@ workflow assembly {
     emit:
       // pilon_fasta = pilon.out.pilon_fasta
       fasta = scaffolds_fasta
+      gff_polished = liftover.out.gff_polished
+      gff = liftover.out.gff
 }

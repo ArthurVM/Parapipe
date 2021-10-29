@@ -20,19 +20,19 @@ workflow preprocessing {
     main:
       checkFqValidity(input_files)
 
-      fastQC(input_files)
+      fastQC(checkFqValidity.out.checkValidity_fqs)
 
       fq_reports = fastQC.out.fastQC_report.collect()
 
       multiQC(fq_reports)
 
-      trimGalore(input_files)
+      trimGalore(checkFqValidity.out.checkValidity_fqs)
 
-      map2Ref(input_files, trimGalore.out.tg_fqs, ref_bt2index)
+      map2Ref(checkFqValidity.out.checkValidity_fqs, trimGalore.out.tg_fqs, ref_bt2index)
 
-      deduplication(input_files, map2Ref.out.bam)
+      deduplication(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam)
 
-      gini(input_files, map2Ref.out.bam)
+      gini(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam)
 
     emit:
       bam = map2Ref.out.bam
