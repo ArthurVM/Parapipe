@@ -6,6 +6,7 @@ import sys
 import os
 import argparse
 from utilities import *
+from shutil import copyfile
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -62,7 +63,7 @@ def checkGenomeID(ref_id, refdata_lines):
 
     else:
         for refline in refdata_lines:
-            if refline[1] == ref_id.lower():
+            if refline[1].lower() == ref_id.lower():
                 return refline
 
 def downloadData_OLD(genome_id):
@@ -139,23 +140,41 @@ def downloadData_OLD(genome_id):
         ftpdir = "ftp://ftp.ensemblgenomes.org/pub/current/protists/fasta/"
         None
 
-def downloadData(genome_id):
+def getData(genome_id):
     """ Downloads genome and annotation data for the specified reference genome
     """
 
     ref = RefData(genome_id)
 
-    gff_path = getGFF(ref.path)
-    gaf_path = getGAF(ref.path)
-    fasta_path, annoCDS_path = getFASTA(ref.path)
+    if ref.source == "LOCAL":
+        ## deal with local reference files
+        gff_path = os.path.join(ref.path, ref.id + ".gff")
+        gaf_path = os.path.join(ref.path, ref.id + "_GO.gaf")
+        fasta_path = os.path.join(ref.path, ref.id + ".fasta")
+        annoCDS_path = os.path.join(ref.path, ref.id + "_cds.fasta")
 
-    print(gff_path, gaf_path, fasta_path, annoCDS_path)
+        print(gff_path, gaf_path, fasta_path, annoCDS_path)
+        cwd = os.getcwd()
+        copyfile(gff_path, os.path.join(cwd, ref.id + ".gff"))
+        copyfile(gaf_path, os.path.join(cwd, ref.id + "_GO.gaf"))
+        copyfile(fasta_path, os.path.join(cwd, ref.id + ".fasta"))
+        copyfile(annoCDS_path, os.path.join(cwd, ref.id + "_cds.fasta"))
 
-    ## perform downloads
-    command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
-    command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
-    command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
-    command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
+    elif ref.source == "FTP":
+        gff_path = getGFF(ref.path)
+        gaf_path = getGAF(ref.path)
+        fasta_path, annoCDS_path = getFASTA(ref.path)
+
+        print(gff_path, gaf_path, fasta_path, annoCDS_path)
+
+        ## perform downloads
+        command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
+        command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
+        command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
+        command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
+
+    else:
+        InputError(f"getData", f"'{ref.source}' is not an accepted source location. Please specify FTP or LOCAL.\n")
 
 def getGFF(ftpdir):
     """ takes html output from the curl runline of CryptoDB and returns the GFF path
@@ -198,7 +217,7 @@ def parseArgs(argv):
 
 def main(argv):
     args = parseArgs(argv)
-    downloadData(args.genome_id)
+    getData(args.genome_id)
 
 if __name__=="__main__":
     main(sys.argv)

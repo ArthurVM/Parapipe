@@ -25,7 +25,7 @@ process findSNPs {
   error_log = "${sample_name}.err"
 
   """
-  bcftools mpileup -Ov --gvcf 0 --skip-indels -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m --gvcf 0 -o ${sample_name}.gvcf
+  bcftools mpileup -Ov --gvcf 0 -f ${fasta} ${dedup_bam} | bcftools call -m --gvcf 0 -o ${sample_name}.gvcf
   bgzip -ci ${sample_name}.gvcf > ${sample_name}.vcf.gz
   samtools mpileup --skip-indels --BCF -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m -O v --variants-only -o ${sample_name}.var.vcf -
   """

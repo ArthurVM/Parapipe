@@ -16,7 +16,11 @@ Reading in merged vcf files generated using bcftools merge, containing SNP data 
 *this is not optimal since it only works in this instance and assumes that all members of UKH26, for example, belong to the same population. This could be switched out for populations as defined by a text file.
 
 ```{r}
-vcf <- read.vcfR( "/home/amorris/BioInf/Parapipe/test_dryrunBIG/GVCFs/merged.vcf", verbose = FALSE )
+vcf <- read.vcfR( "/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/GVCFs/merged.vcf", verbose = FALSE )
+dna <- ape::read.dna("/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/REFDATA/cryptosporidium_parvum.fasta", format = "fasta")
+gff <- read.table("/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/REFDATA/cryptosporidium_parvum.gff", sep="\t", quote="")
+chrom <- create.chromR(name='Supercontig', vcf=vcf, seq=dna, ann=gff)
+
 gind <- vcfR2genind(vcf)
 gind
 row.names(gind@tab)
@@ -108,4 +112,22 @@ and on the third axis
 colorplot(pca1$li[c(1,3)], pca1$li, transp=TRUE, cex=3, xlab="PC 1", ylab="PC 3")
 title("PCA of SNP dataset\naxes 1-3")
 abline(v=0,h=0,col="grey", lty=2)
+```
+
+Kmeans clustering
+```{r, fig.width=10, fig.height=7}
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering algorithms & visualization
+library(gridExtra)
+
+gind.mat <- as.matrix(gind$tab)
+gind.mat[is.na(gind.mat)] <- 0
+gind.mat[gind.mat==2] <- 1
+filtered.mat <- gind.mat[ , which(apply(gind.mat, 2, var) != 0)]
+wss.p <- fviz_nbclust(filtered.mat, kmeans, method = "wss")
+grid.arrange(wss.p, nrow = 1)
+sc.km <- kmeans(filtered.mat, centers = 2, nstart =5)
+p2 <- fviz_cluster(sc.km, data = filtered.mat, labelsize=0, main="k=2")
+grid.arrange(p2, nrow = 1)
 ```

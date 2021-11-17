@@ -112,7 +112,7 @@ def pairFiles(gff_list, fasta_list):
     for gff in gff_list:
         id = os.path.basename(os.path.splitext(gff)[0])
         for fasta in fasta_list:
-            if fasta.startswith(id):
+            if os.path.basename(fasta).startswith(id):
                 gff_fasta_pairs.append([gff, fasta])
 
     return gff_fasta_pairs
