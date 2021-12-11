@@ -34,6 +34,7 @@ apt-get update \
 
 pip3 install biopython
 
+pip3 install pysam
 
 curl -fsSL https://github.com/ArthurVM/NGS-Gini-Analysis-Toolkit/archive/refs/tags/v${ngstoolkit_version}.tar.gz | tar -xz \
 && pip3 install -r ./NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/dependancies.txt

@@ -22,8 +22,8 @@ process downloadRefData {
 
   stub:
   fasta = "${genome_id}.fasta"
-  gaf = "${genome_id}_GO.gaf"
   gff = "${genome_id}.gff"
+  gaf = "${genome_id}_GO.gaf"
   cds_fasta = "${genome_id}_cds.fasta"
 
   """

@@ -41,12 +41,15 @@ if ( params.genome == "" ) {
 if ( params.pattern == "" ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
-if ( ( params.ref_scaffold != "yes" ) && ( params.ref_scaffold != "no" ) ) {
-    exit 1, "error: --ref_scaffold is mandatory and must be either \"yes\" or \"no\"."
-}
 
 if ( ( params.only_SNP != "yes" ) && ( params.only_SNP != "no" ) ) {
     exit 1, "error: --only_SNP is mandatory and must be either \"yes\" or \"no\"."
+}
+
+if ( ( params.only_SNP != "yes" ) ) {
+  if ( ( params.ref_scaffold != "yes" ) && ( params.ref_scaffold != "no" ) ) {
+      exit 1, "error: --ref_scaffold is mandatory and must be either \"yes\" or \"no\"."
+  }
 }
 
 log.info """
@@ -98,9 +101,9 @@ workflow {
       assemblies_list = assembly.out.fasta.collect()
       annotations_list = assembly.out.gff_polished.collect()
 
-      if ( ref_scaffold_bool == "yes" ) {
-        postAssemblyAnalysis(assemblies_list, annotations_list, prepRef.out.refdata)
-      }
+      // if ( ref_scaffold_bool == "yes" ) {
+      //   postAssemblyAnalysis(assemblies_list, annotations_list, prepRef.out.refdata)
+      // }
 
       callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
     }

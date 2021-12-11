@@ -9,6 +9,7 @@ include {trimGalore} from '../modules/preprocessingModules.nf'
 include {map2Ref} from '../modules/preprocessingModules.nf'
 include {deduplication} from '../modules/preprocessingModules.nf'
 include {gini} from '../modules/preprocessingModules.nf'
+include {summarise} from '../modules/preprocessingModules.nf'
 
 // define workflow
 workflow preprocessing {
@@ -30,9 +31,11 @@ workflow preprocessing {
 
       map2Ref(checkFqValidity.out.checkValidity_fqs, trimGalore.out.tg_fqs, ref_bt2index)
 
-      deduplication(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam)
+      // deduplication(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam)
 
       gini(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam)
+
+      summarise(checkFqValidity.out.checkValidity_fqs, map2Ref.out.bam, gini.out.GG)
 
     emit:
       bam = map2Ref.out.bam

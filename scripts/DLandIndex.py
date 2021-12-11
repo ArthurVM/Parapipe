@@ -90,10 +90,10 @@ def downloadData_OLD(genome_id):
         print(gff_path, gaf_path, fasta_path, annoCDS_path)
 
         ## perform downloads
-        command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
-        command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
         command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
-        command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
+        command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
+        # command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
+        # command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
 
     elif genome_id.startswith("plasmodium"):
         ## handle all Plasmo seperately
@@ -148,29 +148,29 @@ def getData(genome_id):
 
     if ref.source == "LOCAL":
         ## deal with local reference files
+        fasta_path = os.path.join(ref.path, ref.id + ".fasta")
         gff_path = os.path.join(ref.path, ref.id + ".gff")
         gaf_path = os.path.join(ref.path, ref.id + "_GO.gaf")
-        fasta_path = os.path.join(ref.path, ref.id + ".fasta")
         annoCDS_path = os.path.join(ref.path, ref.id + "_cds.fasta")
 
         print(gff_path, gaf_path, fasta_path, annoCDS_path)
         cwd = os.getcwd()
+        copyfile(fasta_path, os.path.join(cwd, ref.id + ".fasta"))
         copyfile(gff_path, os.path.join(cwd, ref.id + ".gff"))
         copyfile(gaf_path, os.path.join(cwd, ref.id + "_GO.gaf"))
-        copyfile(fasta_path, os.path.join(cwd, ref.id + ".fasta"))
         copyfile(annoCDS_path, os.path.join(cwd, ref.id + "_cds.fasta"))
 
     elif ref.source == "FTP":
+        fasta_path, annoCDS_path = getFASTA(ref.path)
         gff_path = getGFF(ref.path)
         gaf_path = getGAF(ref.path)
-        fasta_path, annoCDS_path = getFASTA(ref.path)
 
         print(gff_path, gaf_path, fasta_path, annoCDS_path)
 
         ## perform downloads
+        command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
         command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
         command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
-        command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
         command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
 
     else:

@@ -266,3 +266,35 @@ process gini {
   touch ${gg_file}
   """
 }
+
+process summarise {
+  /**
+  * calculate the gini of mapped read coverage
+  */
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/mapping_stats", mode: 'copy'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(fq1), path(fq2)
+  path(bam)
+  path(GG)
+
+  output:
+  path "${sample_name}_mapstats.json", emit: mapstats_json
+
+  script:
+  """
+  samtools index ${bam}
+  samtools stats ${bam} > tmp.stats
+  python3 ${baseDir}/scripts/parse_samtools_stats.py ${bam} tmp.stats ${GG}> ${sample_name}_mapstats.json
+  """
+
+  stub:
+  mapstats_json = "${sample_name}_mapstats.json"
+  """
+  touch ${mapstats_json}
+  """
+}
