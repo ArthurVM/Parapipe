@@ -6,6 +6,8 @@ process spades {
   */
   tag { sample_name }
 
+  errorStrategy 'ignore'
+
   publishDir "${params.output_dir}/$sample_name/Assembly", mode: 'copy', overwrite: 'true'
 
   cpus 8
@@ -238,6 +240,7 @@ process abacas {
 process liftover {
   /**
   * Perform feature liftover using Liftoff
+  * TODO: impliment a version of liftoff with fixed "polish"
   */
 
   tag { sample_name }
@@ -254,13 +257,13 @@ process liftover {
 
   output:
   path("${sample_name}.gff"), emit: gff
-  path("${sample_name}.gff_polished"), emit: gff_polished
+  // path("${sample_name}.gff_polished"), emit: gff_polished
   path("unmapped_features.txt"), emit: unmapped_features
 
   script:
   """
   python3 ${baseDir}/scripts/getFeatureIDs.py ${gff}
-  liftoff ${scaffolds} ${fasta} -g ${gff} -f featureset.txt -o ${sample_name}.gff -polish -cds -copies
+  liftoff ${scaffolds} ${fasta} -g ${gff} -f featureset.txt -o ${sample_name}.gff -cds -copies
   """
 
   stub:
