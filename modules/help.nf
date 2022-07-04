@@ -13,6 +13,7 @@ log.info"""
     --genome            the ID of the reference genome to download and map against.
     --ref_scaffold      perform reference driven scaffolding using ABACAS. NOTE: It is unadvised to use this if the reference is not arranged in complete chromosomes.
     --only_SNP          only run SNP calling modules and exit before assembly and downstream analysis.
+    --target_flanks     flaking regions for target loci to extract for the purpose of phylogenetic analysis.
 
   Profiles:
   singularity           run with singularity image

@@ -98,6 +98,7 @@ export PICARD_JAR=/usr/local/bin/picard.jar
 export LD_LIBRARY_PATH=/usr/local/lib
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
+
 %runscript
 exec /bin/bash "$@"
 %startscript

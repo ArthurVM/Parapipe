@@ -5,12 +5,13 @@ nextflow.enable.dsl=2
 
 // import modules
 include {printHelp} from './modules/help.nf'
-include {prepRef} from './workflows/prepref.nf'
-include {preprocessing} from './workflows/preprocessing.nf'
-include {callSNPs} from './workflows/varanalysis.nf'
-include {callSTRs} from './workflows/varanalysis.nf'
-include {assembly} from './workflows/assembly.nf'
-include {postAssemblyAnalysis} from './workflows/postAssemblyAnalysis.nf'
+include {prepRef} from './workflows/pre_assembly/prepref.nf'
+include {preprocessing} from './workflows/pre_assembly/preprocessing.nf'
+include {SNP_analysis} from './workflows/pre_assembly/analyse_variants.nf'
+include {targetAnalysis} from './workflows/pre_assembly/analyse_variants.nf'
+include {assembly} from './workflows/post_assembly/assembly.nf'
+include {STR_analysis} from './workflows/post_assembly/STR_analysis.nf'
+include {postAssemblyAnalysis} from './workflows/post_assembly/postAssemblyAnalysis.nf'
 
 /*
  ANSI escape codes to allow colour-coded output messages
@@ -29,27 +30,44 @@ if (params.help) {
 }
 
 // check mandatory parameters
-if ( params.input_dir == "" ) {
+if ( params.input_dir == null ) {
     exit 1, "error: please provide an --input_dir argument. Use --help for an explenation for the parameters."
 }
-if ( params.output_dir == "" ) {
+
+if ( params.output_dir == null ) {
     exit 1, "error: please provide an --output_dir argument. Use --help for an explenation for the parameters."
 }
-if ( params.genome == "" ) {
+
+if ( params.genome == null ) {
     exit 1, "error: please provide a --genome argument. Use --help for an explenation for the parameters."
 }
-if ( params.pattern == "" ) {
+
+if ( params.pattern == null ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
 
-if ( ( params.only_SNP != "yes" ) && ( params.only_SNP != "no" ) ) {
-    exit 1, "error: --only_SNP is mandatory and must be either \"yes\" or \"no\"."
+if ( params.only_SNP == null ) {
+    params.only_SNP = false
 }
 
-if ( ( params.only_SNP != "yes" ) ) {
-  if ( ( params.ref_scaffold != "yes" ) && ( params.ref_scaffold != "no" ) ) {
-      exit 1, "error: --ref_scaffold is mandatory and must be either \"yes\" or \"no\"."
-  }
+// if ( ( params.only_SNP != "yes" ) && ( params.only_SNP != "no" ) ) {
+//     exit 1, "error: --only_SNP is mandatory and must be either \"yes\" or \"no\"."
+// }
+
+if ( params.ref_scaffold == null ) {
+    params.ref_scaffold = false
+}
+
+// if ( ( params.ref_scaffold != "yes" ) && ( params.ref_scaffold != "no" ) ) {
+//     exit 1, "error: --ref_scaffold is mandatory and must be either \"yes\" or \"no\"."
+// }
+
+if ( ( params.only_SNP == true ) && ( params.ref_scaffold == true ) ) {
+    exit 1, "error: --ref_scaffold and --only_SNP are mutually exclusive."
+}
+
+if ( params.target_flanks == null ) {
+    params.target_flanks = false
 }
 
 log.info """
@@ -64,6 +82,7 @@ Parameters used:
 --pattern		${params.pattern}
 --ref_scaffold  ${params.ref_scaffold}
 --only_SNP  ${params.only_SNP}
+--target_flanks ${params.target_flanks}
 
 Runtime data:
 ------------------------------------------------------------------------
@@ -91,10 +110,14 @@ workflow {
 
     preprocessing(input_files, prepRef.out.ref_bt2index)
 
-    callSNPs(input_files, preprocessing.out.bam, prepRef.out.refdata)
+    SNP_analysis(input_files, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json)
+
+    if ( params.target_flanks != false ) {
+      targetAnalysis(input_files, preprocessing.out.trimmed_fqs, params.target_flanks)
+    }
 
     // check whether to run the rest of the pipeline or stop after calling SNPs
-    if ( only_SNP_bool == "no" ){
+    if ( only_SNP_bool == false ) {
       // run the whole pipeline
       assembly(input_files, preprocessing.out.trimmed_fqs, ref_scaffold_bool, prepRef.out.refdata)
 
@@ -107,7 +130,7 @@ workflow {
       * }
       */
 
-      callSTRs(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
+      STR_analysis(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
     }
 }
 

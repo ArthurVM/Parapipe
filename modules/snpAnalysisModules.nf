@@ -1,14 +1,14 @@
 // modules for identifying SNPs in mapped reads
 
-process runSNP {
+process findSNPs {
   /**
   * Call snps in mapped reads
   */
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', pattern: '*.vcf' overwrite: 'true'
-  publishDir "${params.output_dir}/GVCFs", mode: 'copy', pattern: '*.gvcf' overwrite: 'true'
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.var.vcf'
+  publishDir "${params.output_dir}/GVCFs", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
 
   memory '5 GB'
 
@@ -19,13 +19,24 @@ process runSNP {
 
   output:
   path("${sample_name}.var.vcf"), emit: vcf
+  path("${sample_name}.vcf.gz"), emit: gvcf
+  path("*MERGE_AND_PLOT"), emit: merge_and_plot
 
   script:
   error_log = "${sample_name}.err"
 
   """
   bcftools mpileup -Ov --gvcf 0 -f ${fasta} ${dedup_bam} | bcftools call -m --gvcf 0 -o ${sample_name}.gvcf
+  bgzip -ci ${sample_name}.gvcf > ${sample_name}.vcf.gz
   samtools mpileup --skip-indels --BCF -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m -O v --variants-only -o ${sample_name}.var.vcf -
+
+  a=`ll *vcf.gz | wc -l`
+  if [ \$a -gt 2 ]
+    then
+      touch ./MERGE_AND_PLOT;
+    else
+      touch ./DONT_MERGE_AND_PLOT;
+  fi
   """
 
   stub:
@@ -33,6 +44,51 @@ process runSNP {
 
   """
   touch ${sample_name}.var.vcf
+  touch ${sample_name}.vcf.gz
+  touch ./MERGE_AND_PLOT
+  """
+}
+
+process makeVCFtree {
+  /**
+  * Plot SNPs across each chromosome
+  */
+
+  publishDir "${params.output_dir}/GVCFs", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
+  publishDir "${params.output_dir}/SNP_phylos", mode: 'copy', overwrite: 'true', pattern: '*.png'
+  publishDir "${params.output_dir}/SNP_phylos", mode: 'copy', overwrite: 'true', pattern: '*.nwk'
+
+  memory '5 GB'
+
+  input:
+  path(gvcf_files)
+  tuple path(fasta), path(gff), path(cds), path(gaf)
+  path(merge_and_plot)
+
+  output:
+  path("merged.vcf"), emit: vcf
+  path("*.png"), emit: snp_phylo_pngs
+  path("*.nwk"), emit: newick_tree
+
+  when:
+  merge_and_plot = /MERGE\_AND\_PLOT/
+
+  script:
+  scripts = "${workflow.launchDir}/scripts"
+  """
+  for x in ./*vcf.gz; do
+    bcftools index \$x;
+  done
+    bcftools merge -g ${fasta} -o merged.vcf ./*vcf.gz
+  Rscript ${scripts}/snpPhylo.R -v merged.vcf
+  """
+
+  stub:
+  """
+  touch merged.vcf
+  for x in ./*vcf.gz; do
+    touch \${x}.png;
+  done
   """
 }
 
@@ -65,7 +121,7 @@ process preprocessForPlotting {
 
   stub:
   """
-  touch tmp_descStripped.fasta
+  touch tmp.descStripped.fasta
   mkdir vcf_split
   """
 }
@@ -103,38 +159,33 @@ process plotSNP {
   """
 }
 
-process findSTRs {
+process makeSNPreport {
   /**
-  * Find Short Tandem Repeats using TRF
+  * Make report for SNP module
   */
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/STR", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/$sample_name/", mode: 'copy', overwrite: 'true'
 
-  memory '12 GB'
+  memory '5 GB'
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
-  path(pilon_fasta)
+  path(mapstats_json)
+  path(newick_tree)
 
   output:
-  tuple path("trf.stdout"), path("trf.stderr"), emit: trf_log
-  path("${pilon_fasta}.2.7.7.80.10.50.500.dat"), emit: trf_dat
+  path("${sample_name}_SNPreport.json"), emit: snpreport_json
 
   script:
-  trf_stdout = "trf.stdout"
-  trf_stderr = "trf.stderr"
-  // There is some weirdness going on with TRF, where it is successfully running but producing non 0 exit status
-  // trap is used here as a temporary fix
+  scripts = "${workflow.launchDir}/scripts"
   """
-  trap 'if [[ \$? != 0 ]]; then echo OVERRIDE EXIT; exit 0; fi' EXIT
-  trf4.10.0-rc.2.linux64.exe ${pilon_fasta} 2 7 7 80 10 50 500 -d -h 1> ${trf_stdout} 2> ${trf_stderr}
+  python3 ${scripts}/makeReport.py ${mapstats_json} ${newick_tree} > ${sample_name}_SNPreport.json
   """
 
   stub:
-  trf_dat = "${pilon_fasta}.2.7.7.80.10.50.500.dat"
   """
-  touch ${trf_dat}
+  touch SNPDist.pdf
   """
 }

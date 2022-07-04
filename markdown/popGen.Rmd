@@ -16,9 +16,9 @@ Reading in merged vcf files generated using bcftools merge, containing SNP data 
 *this is not optimal since it only works in this instance and assumes that all members of UKH26, for example, belong to the same population. This could be switched out for populations as defined by a text file.
 
 ```{r}
-vcf <- read.vcfR( "/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/GVCFs/merged.vcf", verbose = FALSE )
-dna <- ape::read.dna("/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/REFDATA/cryptosporidium_parvum.fasta", format = "fasta")
-gff <- read.table("/home/amorris/BioInf/Parapipe/test_wetrunBIG_parv/REFDATA/cryptosporidium_parvum.gff", sep="\t", quote="")
+vcf <- read.vcfR( "/home/amorris/BioInf/Parapipe/Cparvum_AH_Chom.vcf", verbose = FALSE )
+dna <- ape::read.dna("/home/amorris/BioInf/Parapipe/PRJNA633764_A/REFDATA/cryptosporidium_parvum.fasta", format = "fasta")
+gff <- read.table("/home/amorris/BioInf/Parapipe/PRJNA633764_A/REFDATA/cryptosporidium_parvum.gff", sep="\t", quote="")
 chrom <- create.chromR(name='Supercontig', vcf=vcf, seq=dna, ann=gff)
 
 gind <- vcfR2genind(vcf)
@@ -34,7 +34,7 @@ gpop
 
 ## Plot data
 Run centred, non-scaled PCA on data.
-```{r, fig.width=20, fig.height=14}
+```{r, fig.width=25, fig.height=15}
 X <- tab(gind, NA.method="mean")
 pca1 <- dudi.pca(X,scannf=FALSE,scale=FALSE)
 temp <- as.integer(pop(gind))
@@ -53,17 +53,18 @@ legend("topright", pch=c(15,17), col=transp(c("blue","red"),.7),
 ```
 
 Generate a dendrogram using distance in Euclidean space
-```{r, fig.width=20, fig.height=14}
+```{r, fig.width=25, fig.height=15}
 library(ape)
 D <- dist(tab(gind))
 tre <- nj(D)
-par(xpd=TRUE)
+par(xpd="True")
 plot(tre, type="unrooted", edge.w=2)
-edgelabels(tex=round(tre$edge.length,1), bg=rgb(.8,.8,1,.8))
+# edgelabels(tex=round(tre$edge.length,1), bg=rgb(.8,.8,1,.8))
+plot(tre, type="p", edge.w=2)
 ```
 
 Carry out Principle coordinate analysis on these euclidean distances, since they are a more accurate representation of nth dimensional distances in planar space.
-```{r, fig.width=20, fig.height=14}
+```{r, fig.width=40, fig.height=25}
 pco1 <- dudi.pco(D, scannf=FALSE,nf=2)
 s.label(pco1$li*1.1, clab=0, pch="")
 textplot(pco1$li[,1], pco1$li[,2], words=rownames(pco1$li),
@@ -72,7 +73,7 @@ title("Principal Coordinate Analysis\n-based on SNP distances-")
 ```
 
 Replace missing data with mean, and generate another PCA. Produce eigenvalue plots and plot PCA using ALL eigenvalues (setting this in an automated manner could be fiddly). Various representations of a PCA plot are given here.
-```{r, fig.width=10, fig.height=7}
+```{r, fig.width=15, fig.height=10}
 X <- scaleGen(gind, NA.method="mean")
 pca1 <- dudi.pca(X,cent=FALSE,scale=FALSE,scannf=FALSE,nf=3)
 barplot(pca1$eig[1:50],main="PCA eigenvalues", col=heat.colors(50))
@@ -82,20 +83,20 @@ add.scatter.eig(pca1$eig, 3,1,2)
 ```
 
 Improvement to PCA plot by using s.class to represent both the genotypes and inertia ellipses for populations.
-```{r, fig.width=10, fig.height=7}
+```{r, fig.width=40, fig.height=25}
 s.class(pca1$li,pop(gind),xax=1,yax=3,sub="PCA 1-2",csub=2)
 title("PCA of SNP dataset\naxes 1-2")
 add.scatter.eig(pca1$eig[1:20],nf=3,xax=1,yax=2)
 ```
 and on the third axis
-```{r, fig.width=10, fig.height=7}
+```{r, fig.width=40, fig.height=25}
 s.class(pca1$li,pop(gind),xax=1,yax=3,sub="PCA 1-3",csub=2)
 title("PCA of SNP dataset\naxes 1-3")
 add.scatter.eig(pca1$eig[1:20],nf=3,xax=1,yax=3)
 ```
 
 Colourisation of the PCA
-```{r, fig.width=10, fig.height=7}
+```{r, fig.width=40, fig.height=25}
 col <- funky(15)
 s.class(pca1$li, pop(gind),xax=1,yax=3, col=transp(col,.6), axesell=FALSE,
 cstar=0, cpoint=3, grid=FALSE)
@@ -116,7 +117,7 @@ abline(v=0,h=0,col="grey", lty=2)
 
 Kmeans clustering
 ```{r, fig.width=10, fig.height=7}
-library(tidyverse)  # data manipulation
+# library(tidyverse)  # data manipulation
 library(cluster)    # clustering algorithms
 library(factoextra) # clustering algorithms & visualization
 library(gridExtra)

@@ -2,8 +2,8 @@
 nextflow.enable.dsl = 2
 
 // import modules
-include {downloadRefData} from '../modules/preprefModules.nf'
-include {indexRefData} from '../modules/preprefModules.nf'
+include {downloadRefData} from '../../modules/preprefModules.nf'
+include {indexRefData} from '../../modules/preprefModules.nf'
 
 // define workflow
 workflow prepRef {

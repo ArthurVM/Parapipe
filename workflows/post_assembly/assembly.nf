@@ -2,13 +2,13 @@
 nextflow.enable.dsl = 2
 
 // import modules
-include {spades} from '../modules/assemblyModules.nf'
-include {quast} from '../modules/assemblyModules.nf'
-include {indexAssembly} from '../modules/assemblyModules.nf'
-include {map2SPAdesFasta} from '../modules/assemblyModules.nf'
-include {pilon} from '../modules/assemblyModules.nf'
-include {abacas} from '../modules/assemblyModules.nf'
-include {liftover} from '../modules/assemblyModules.nf'
+include {spades} from '../../modules/assemblyModules.nf'
+include {quast} from '../../modules/assemblyModules.nf'
+include {indexAssembly} from '../../modules/assemblyModules.nf'
+include {map2SPAdesFasta} from '../../modules/assemblyModules.nf'
+include {pilon} from '../../modules/assemblyModules.nf'
+include {abacas} from '../../modules/assemblyModules.nf'
+include {liftover} from '../../modules/assemblyModules.nf'
 
 // define workflow
 workflow assembly {

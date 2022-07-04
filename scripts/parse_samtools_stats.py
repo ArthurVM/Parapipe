@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from os import path
 import argparse
 import json
 import pysam
@@ -37,7 +38,7 @@ def coverage_hist_to_coverage_breadth(coverage_hist, genome_size, max_cov=100):
     return {k: round(100 * v / genome_size, 2) for k, v in cov_breadth.items()}
 
 
-def parse_samtools_stats_file(infile, genome_size):
+def parse_samtools_stats_file(infile, doc_bed, genome_size):
     stats = {}
     wanted_keys = {
         "raw total sequences:": False,
@@ -84,6 +85,10 @@ def parse_samtools_stats_file(infile, genome_size):
                     )
                 coverage_hist[pos] = count
 
+    mean_DOC, median_DOC = parse_doc_bed(doc_bed)
+    stats["mean_depth_of_coverage"] = mean_DOC
+    stats["median_depth_of_coverage"] = median_DOC
+
     stats["coverage_breadth"] = coverage_hist_to_coverage_breadth(
         coverage_hist, genome_size
     )
@@ -111,6 +116,16 @@ def calc_GG_area(args, stats):
     stats["nGG_area"] = np.round(m_areaN, 3)
     return stats
 
+def parse_doc_bed(doc_bed):
+
+    with open(doc_bed, 'r') as fin:
+        cov_list = [int(line.strip('\n').split('\t')[-1]) for line in fin.readlines()]
+
+    mean_DOC = np.mean(cov_list)
+    median_DOC = np.median(cov_list)
+
+    return mean_DOC, median_DOC
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Gather QC stats from BAM file and output from samtools stats, prints JSON to stdout",
@@ -118,11 +133,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("bam", help="sorted indexed BAM file")
     parser.add_argument("samtools_stats", help="File made by samtools stats bam")
+    parser.add_argument("doc_bed", help="Depth of coverage BED file generated using Samtools depth")
     parser.add_argument("gg_file", help="File containing gini stats")
     options = parser.parse_args()
     genome_size = total_genome_size_from_bam(options.bam)
-    stats = parse_samtools_stats_file(options.samtools_stats, genome_size)
+    stats = parse_samtools_stats_file(options.samtools_stats, options.doc_bed, genome_size)
     stats = calc_GG_area(options, stats)
     tmp = dict()
-    tmp.update({"bam_stats":stats})
+    tmp.update({"bam_file" : path.basename(options.bam)})
+    tmp.update({"mapping_stats":stats})
     print(json.dumps(tmp, sort_keys=True, indent=2))

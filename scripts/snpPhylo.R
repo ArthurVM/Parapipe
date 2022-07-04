@@ -4,7 +4,7 @@ library("ape")
 library("optparse")
 library("glue")
 library("wordcloud")
-library("tidyverse")  # data manipulation
+# library("tidyverse")  # data manipulation
 library("cluster")    # clustering algorithms
 library("factoextra") # clustering algorithms & visualization
 library("gridExtra")
@@ -28,8 +28,7 @@ parseArgs <- function() {
   return(opt)
 }
 
-gind <- function(vcf) {
-  vcf <- "/home/amorris/BioInf/Parapipe/report_WD/merged.vcf"
+vcf2dist <- function(vcf) {
   gind <- vcfR2genind(read.vcfR( vcf , verbose = FALSE ))
   row.names(gind@tab)
   
@@ -38,8 +37,13 @@ gind <- function(vcf) {
 
 makePhylo <- function(D) {
   tre <- nj(D)
+  ape::write.tree(tre, file="./tree.nwk")
+  
+  # plot(tre, type="unrooted", edge.w=2)
+  # edgelabels(tex=round(tre$edge.length,1), bg=rgb(.8,.8,1,.8))
+  
   for ( s in tre$"tip.label" ) {
-    fout <- glue("/home/amorris/BioInf/Parapipe/report_WD/{s}.png")
+    fout <- glue("./{s}.png")
     png(fout, width = 700, height = 700)
     plot(tre, type="unrooted", edge.w=2, tip.color = c("red")[(tre$"tip.label"!=s)+1])
     edgelabels(tex=round(tre$edge.length,1), bg=rgb(.8,.8,1,.8))
@@ -62,20 +66,21 @@ kmeanscluster <- function(gind) {
   filtered.mat <- gind.mat[ , which(apply(gind.mat, 2, var) != 0)]
   wss.p <- fviz_nbclust(filtered.mat, kmeans, method = "wss")
   grid.arrange(wss.p, nrow = 1)
-  sc.km <- kmeans(filtered.mat, centers = 3, nstart =5)
+  sc.km <- kmeans(filtered.mat, centers = 2, nstart = 5)
   p2 <- fviz_cluster(sc.km, data = filtered.mat, labelsize=0, main="k=2")
   grid.arrange(p2, nrow = 1)
 }
 
 main <- function(){
   ## Main function
-  ## opt <- parseArgs()
+  opt <- parseArgs()
+  # vcf = "/home/amorris/BioInf/Parapipe/Cparvum_AH.vcf"
   gind <- vcf2dist(opt$vcf)
   D <- dist(tab(gind))
   makePhylo(D)
-  makePCAplot(D)
   
-  kmeanscluster(gind)
+  # makePCAplot(D)
+  # kmeanscluster(gind)
   
 }
 

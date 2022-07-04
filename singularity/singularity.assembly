@@ -1,0 +1,104 @@
+Bootstrap: docker
+From: debian:buster
+%labels
+maintainer="morrisa28@cardiff.ac.uk"
+about.summary="parasite genomics pipeline container"
+
+%post
+
+python_version=3.6.5
+ujson_version=3.2.0
+spades_version=3.15.3
+pilon_version=1.24
+mummer_version=4.0.0rc1
+abacas_version=1.3.1
+minimap_version=2.22
+liftoff_version=1.6.1
+quast_version=5.0.2
+trf_version=4.09.1
+mauve_version=2015-02-13
+
+PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake libboost-all-dev tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
+PYTHON="python2.7 python-dev python3-dev python-setuptools"
+
+apt-get update \
+&& apt-get install -y $PACKAGES $PYTHON \
+&& curl -fsSL https://www.python.org/ftp/python/${python_version}/Python-${python_version}.tgz | tar -xz \
+&& cd Python-${python_version} \
+&& ./configure --enable-optimizations \
+&& make altinstall \
+&& cd .. \
+&& ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
+&& ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
+&& pip3 install --upgrade pip \
+&& pip3 install ujson==${ujson_version}
+
+pip3 install biopython
+
+curl -fsSL http://cab.spbu.ru/files/release3.15.3/SPAdes-${spades_version}.tar.gz | tar -xz \
+&& cd SPAdes-3.15.3 \
+&& PREFIX=/usr/local/ ./spades_compile.sh \
+&& cd ..
+
+curl -fsSL https://github.com/broadinstitute/pilon/releases/download/v${pilon_version}/pilon-${pilon_version}.jar -o pilon-${pilon_version}.jar \
+&& mv pilon-${pilon_version}.jar /usr/local/bin/
+
+curl -fsSL https://github.com/mummer4/mummer/releases/download/v4.0.0rc1/mummer-${mummer_version}.tar.gz | tar -xz \
+&& cd mummer-${mummer_version} \
+&& ./configure --prefix=/usr/local/ \
+&& make \
+&& make install \
+&& cd ..
+
+mkdir ABACAS \
+&& cd ABACAS \
+&& curl -fsSL https://sourceforge.net/projects/abacas/files/abacas.${abacas_version}.pl/download -o abacas.${abacas_version}.pl \
+&& curl -fsSL ftp://ftp.sanger.ac.uk/pub/resources/software/pagit/PAGIT_MissingScripts.zip -o PAGIT_MissingScripts.zip \
+&& unzip PAGIT_MissingScripts.zip \
+&& cd ..
+
+curl -fsSL https://github.com/lh3/minimap2/archive/refs/tags/v${minimap_version}.tar.gz | tar -xz \
+&& cd minimap2-${minimap_version} \
+&& make \
+&& mv minimap2 /usr/local/bin/ \
+&& cd ../ \
+&& rm -r minimap2-${minimap_version}
+
+pip install liftoff
+
+curl -fsSL https://downloads.sourceforge.net/project/quast/quast-${quast_version}.tar.gz | tar -xz \
+&& cd quast-${quast_version} \
+&& python3 ./setup.py install \
+&& cd ..
+
+curl -fsSL https://github.com/Benson-Genomics-Lab/TRF/archive/refs/tags/v${trf_version}.tar.gz | tar -xz \
+&& cd TRF-${trf_version} \
+&& mkdir build; cd build \
+&& ../configure \
+&& make \
+&& make install \
+&& cd / \
+&& rm v${trf_version}.tar.gz \
+&& rm -r TRF-${trf_version}
+
+curl -fsSL http://bioinf.scmb.uq.edu.au:8080/STRViper/strviper.tar.gz -o strviper.tar.gz \
+&& tar -xzf strviper.tar.gz \
+&& rm strviper.tar.gz
+
+curl -fsSL http://darlinglab.org/mauve/snapshots/2015/2015-02-13/linux-x64/mauve_linux_snapshot_${mauve_version}.tar.gz | tar -xz \
+&& mv mauve_*_${mauve_version} mauve
+
+%environment
+export htslib_version=1.12
+export PATH=$PATH:/strviper/scripts/
+export SNPEFF_DIR=/snpEff/
+export ABACAS_DIR=/ABACAS/
+export LD_LIBRARY_PATH=/usr/local/lib
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+export PATH=$PATH:/mauve/linux-x64/
+
+%runscript
+exec /bin/bash "$@"
+%startscript
+exec /bin/bash "$@"

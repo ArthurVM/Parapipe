@@ -1,5 +1,5 @@
 import json
-import os, sys
+import os
 from matplotlib import pyplot as plt
 
 def process_json(json_file, phylo_tree):
@@ -13,7 +13,9 @@ def process_json(json_file, phylo_tree):
     report_json["phylo"]["format"] = "newick"
     report_json["phylo"]["tree"] = tree
 
-    print(json.dumps(report_json, indent=4))
+    print(report_json)
+    with open("/home/amorris/BioInf/Parapipe/PRJNA634014_H/mapping_stats/test.json", 'w') as fout:
+        json.dump(report_json, fout, indent=4)
 
     return report_json
 

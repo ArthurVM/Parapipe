@@ -108,7 +108,7 @@ process trimGalore {
   */
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/Trim", mode: 'copy'
+  publishDir "${params.output_dir}/$sample_name/preprocessing/Trim", mode: 'copy', pattern: '*.trimming_report.txt'
 
   memory '10 GB'
 
@@ -253,6 +253,7 @@ process gini {
 
   output:
   path "${sample_name}.GG", emit: GG
+  path "${sample_name}.doc.bed", emit: doc_bed
 
   script:
   """
@@ -280,6 +281,7 @@ process summarise {
   input:
   tuple val(sample_name), path(fq1), path(fq2)
   path(bam)
+  path(doc_bed)
   path(GG)
 
   output:
@@ -289,7 +291,7 @@ process summarise {
   """
   samtools index ${bam}
   samtools stats ${bam} > tmp.stats
-  python3 ${baseDir}/scripts/parse_samtools_stats.py ${bam} tmp.stats ${GG}> ${sample_name}_mapstats.json
+  python3 ${baseDir}/scripts/parse_samtools_stats.py ${bam} tmp.stats ${doc_bed} ${GG} > ${sample_name}_mapstats.json
   """
 
   stub:
