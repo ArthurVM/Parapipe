@@ -74,7 +74,7 @@ process makeVCFtree {
   merge_and_plot = /MERGE\_AND\_PLOT/
 
   script:
-  scripts = "${workflow.launchDir}/scripts"
+  scripts = "${workflow.launchDir}/bin"
   """
   for x in ./*vcf.gz; do
     bcftools index \$x;

@@ -31,9 +31,11 @@ apt-get update \
 && ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
 && ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
 && pip3 install --upgrade pip \
-&& pip3 install ujson==${ujson_version}
-
-pip3 install biopython
+&& pip3 install ujson==${ujson_version} \
+&& pip3 install matplotlib \
+&& pip3 install pandas \
+&& pip3 install fpdf \
+&& pip3 install biopython
 
 curl -fsSL http://cab.spbu.ru/files/release3.15.3/SPAdes-${spades_version}.tar.gz | tar -xz \
 && cd SPAdes-3.15.3 \

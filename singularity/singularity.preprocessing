@@ -9,14 +9,15 @@ about.summary="Parapipe preprocessing container"
 python_version=3.6.5
 ngstoolkit_version=0.1-alpha
 fastqc_version=0.11.9
+multiqc_version=1.11
+fqtools_version=2.3
 trimgalore_version=0.6.7
 bowtie2_version=2.3.4.1
 htslib_version=1.12
 samtools_version=1.12
 bcftools_version=1.12
 picard_version=2.18.16
-fqtools_version=2.3
-multiqc_version=1.11
+gatk_version=4.4.0.0
 
 PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
 PYTHON="python2.7 python-dev python3-dev python-setuptools"
@@ -48,12 +49,32 @@ curl -fsSL "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${f
 
 python3 -m pip install --upgrade cutadapt
 
+curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}.tar.gz | tar -xz \
+&& mv htslib-${htslib_version} fqtools-${fqtools_version} \
+&& cd fqtools-${fqtools_version} \
+&& mv htslib-${htslib_version} htslib \
+&& cd htslib \
+&& autoreconf -i \
+&& ./configure \
+&& make \
+&& make install \
+&& cd .. \
+&& make \
+&& mv bin/* /usr/local/bin \
+&& chmod +x /usr/local/bin/fqtools \
+&& cd .. \
+&& rm -r fqtools-${fqtools_version}
+
 curl -fsSL "https://github.com/FelixKrueger/TrimGalore/archive/refs/tags/${trimgalore_version}.tar.gz" | tar -xz \
 && mv ./TrimGalore-${trimgalore_version}/trim_galore /usr/local/bin \
 && rm trimgalore_v${trimgalore_version}.tar.gz \
 && rm -r ./TrimGalore-${trimgalore_version}
 
 wget https://github.com/broadinstitute/picard/releases/download/${picard_version}/picard.jar -O /usr/local/bin/picard.jar
+
+wget https://github.com/broadinstitute/gatk/releases/download/${gatk_version}/gatk-${gatk_version}.zip \
+&& unzip gatk-${gatk_version}.zip \
+&& ln $PWD/gatk-${gatk_version}/gatk /usr/local/bin/
 
 curl -fsSL https://sourceforge.net/projects/bowtie-bio/files/bowtie2/${bowtie2_version}/bowtie2-${bowtie2_version}-source.zip -o bowtie2-${bowtie2_version}-source.zip \
 && unzip bowtie2-${bowtie2_version}-source.zip \

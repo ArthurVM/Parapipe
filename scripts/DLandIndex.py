@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Downloads genome sequence and annotation files and prepares index files for mapping.
 """
@@ -157,8 +159,8 @@ def getData(genome_id):
         cwd = os.getcwd()
         copyfile(fasta_path, os.path.join(cwd, ref.id + ".fasta"))
         copyfile(gff_path, os.path.join(cwd, ref.id + ".gff"))
-        copyfile(gaf_path, os.path.join(cwd, ref.id + "_GO.gaf"))
-        copyfile(annoCDS_path, os.path.join(cwd, ref.id + "_cds.fasta"))
+        # copyfile(gaf_path, os.path.join(cwd, ref.id + "_GO.gaf"))
+        # copyfile(annoCDS_path, os.path.join(cwd, ref.id + "_cds.fasta"))
 
     elif ref.source == "FTP":
         fasta_path, annoCDS_path = getFASTA(ref.path)
@@ -170,8 +172,8 @@ def getData(genome_id):
         ## perform downloads
         command(f"curl {fasta_path} -o ./{genome_id}.fasta").run_comm(0)
         command(f"curl {gff_path} -o ./{genome_id}.gff").run_comm(0)
-        command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
-        command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
+        # command(f"curl {gaf_path} -o ./{genome_id}_GO.gaf").run_comm(0)
+        # command(f"curl {annoCDS_path} -o ./{genome_id}_cds.fasta").run_comm(0)
 
     else:
         InputError(f"getData", f"'{ref.source}' is not an accepted source location. Please specify FTP or LOCAL.\n")

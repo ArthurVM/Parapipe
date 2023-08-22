@@ -18,12 +18,12 @@ process makeChromosomeFastas {
   script:
   """
   echo ${assemblies}
-  python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies} ${fasta}
+  python3 ${baseDir}/bin/makeChromosomeFastas.py ${assemblies} ${fasta}
   """
 
   stub:
   """
-  python3 ${baseDir}/scripts/makeChromosomeFastas.py ${assemblies} ${fasta}
+  python3 ${baseDir}/bin/makeChromosomeFastas.py ${assemblies} ${fasta}
   """
 }
 
@@ -89,13 +89,13 @@ process dNdS {
 
   script:
   """
-  python3 ${baseDir}/scripts/gff2protein.py -g ${annotations} -f ${assemblies} -id gene
-  python3 ${baseDir}/scripts/alignOrthos.py ./*-cdna.fa
+  python3 ${baseDir}/bin/gff2protein.py -g ${annotations} -f ${assemblies} -id gene
+  python3 ${baseDir}/bin/alignOrthos.py ./*-cdna.fa
   """
 
   stub:
   """
-  echo "python3 ${baseDir}/scripts/gff2protein.py -g ${annotations} -f ${assemblies} -id gene"
-  echo "python3 ${baseDir}/scripts/alignOrthos.py ./*-cdna.fa"
+  echo "python3 ${baseDir}/bin/gff2protein.py -g ${annotations} -f ${assemblies} -id gene"
+  echo "python3 ${baseDir}/bin/alignOrthos.py ./*-cdna.fa"
   """
 }

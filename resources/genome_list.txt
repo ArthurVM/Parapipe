@@ -7,4 +7,5 @@ FTP	plasmodium_falciparum	https://plasmodb.org/common/downloads/Current_Release/
 FTP	plasmodium_knowlesi	https://plasmodb.org/common/downloads/Current_Release/PknowlesiA1H1	protein_coding_gene
 FTP	plasmodium_malariae	https://plasmodb.org/common/downloads/Current_Release/PmalariaeUG01	protein_coding_gene
 FTP	plasmodium_vivax	https://plasmodb.org/common/downloads/Current_Release/PvivaxP01	protein_coding_gene
-LOCAL	mycobacterium_tuberculosis	/home/amorris/BioInf/TB_genomes/ref	protein_coding_gene
+LOCAL	mycobacterium_tuberculosis	/home/amorris/BioInf/Parapipe/ref_files/M_tuberculosis	protein_coding_gene
+LOCAL	mycobacterium_interjectum	/home/amorris/BioInf/Parapipe/ref_files/M_interjectum_ref	gene

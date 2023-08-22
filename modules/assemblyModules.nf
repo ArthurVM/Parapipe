@@ -14,8 +14,7 @@ process spades {
   memory '15 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(trimmed_fq1), path(trimmed_fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
 
   output:
   path("scaffolds.fasta"), emit: scaffolds
@@ -39,13 +38,15 @@ process quast {
   */
   tag { sample_name }
 
+  errorStrategy 'ignore'
+
   publishDir "${params.output_dir}/$sample_name/Assembly/quast/", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(fasta), path(gff), path(cds), path(gaf)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq1), val(enough_reads)
+  tuple path(fasta), path(gff)
   path(spades_assembly)
 
   output:
@@ -84,7 +85,7 @@ process indexAssembly {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
   path(scaffolds)
 
   output:
@@ -115,8 +116,7 @@ process map2SPAdesFasta {
   publishDir "${params.output_dir}/$sample_name/Assembly/Map", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(trimmed_fq1), path(trimmed_fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
   path(ref_bt2index)
 
   output:
@@ -158,7 +158,7 @@ process pilon {
   publishDir "${params.output_dir}/$sample_name/Assembly/Pilon", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
   path(bam)
   path(scaffolds)
 
@@ -196,9 +196,9 @@ process abacas {
   publishDir "${params.output_dir}/$sample_name/Assembly/ABACAS", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
   path(scaffolds)
-  tuple path(fasta), path(gff), path(cds), path(gaf)
+  tuple path(fasta), path(gff)
 
   output:
   path("${sample_name}.ABACAS.fasta"), emit: abacas_fasta
@@ -251,9 +251,9 @@ process liftover {
   publishDir "${params.output_dir}/$sample_name/Annotation", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(trimmed_fq1), path(trimmed_fq2), val(enough_reads)
   path(scaffolds)
-  tuple path(fasta), path(gff), path(cds), path(gaf)
+  tuple path(fasta), path(gff)
 
   output:
   path("${sample_name}.gff"), emit: gff
@@ -262,7 +262,7 @@ process liftover {
 
   script:
   """
-  python3 ${baseDir}/scripts/getFeatureIDs.py ${gff}
+  python3 ${baseDir}/bin/getFeatureIDs.py ${gff}
   liftoff ${scaffolds} ${fasta} -g ${gff} -f featureset.txt -o ${sample_name}.gff -cds -copies
   """
 

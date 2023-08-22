@@ -164,7 +164,7 @@ process plotSTR {
   path("STRDist.pdf"), emit: pdf
 
   script:
-  scripts = "${workflow.launchDir}/scripts"
+  scripts = "${workflow.launchDir}/bin"
   """
   echo "Creating plots..."
   Rscript ${scripts}/SNPdist.R -v ${vcf_path} -f ${preprocessed_fasta} -g ${gff}

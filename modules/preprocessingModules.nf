@@ -17,7 +17,7 @@ process checkFqValidity {
   tuple val(sample_name), path(fq1), path(fq2)
 
   output:
-  tuple val(sample_name), path(fq1), path(fq2), emit: checkValidity_fqs
+  tuple val(sample_name), path(fq1), path(fq2), stdout, emit: checkValidity_fqs
   path("${sample_name}.err", emit: checkValidity_log)
 
   script:
@@ -38,6 +38,103 @@ process checkFqValidity {
   """
 }
 
+process countReads {
+    /**
+    * fail sample if there are < 100k raw reads
+    */
+
+    tag { sample_name }
+
+    publishDir "${params.output_dir}/$sample_name", mode: 'copy', overwrite: 'true', pattern: '*.err'
+
+    memory '5 GB'
+
+    input:
+    tuple val(sample_name), path(fq1), path(fq2), val(is_ok)
+
+    when:
+    is_ok == 'OK'
+
+    output:
+    tuple val(sample_name), path(fq1), path(fq2), stdout, emit: countReads_fqs
+    path("${sample_name}.err", emit: countReads_log)
+
+    script:
+    error_log = "${sample_name}.err"
+    """
+    num_reads=\$(fqtools count $fq1 $fq2)
+
+    if (( \$num_reads > 100000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have > 100k pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    """
+
+    stub:
+    error_log = "${sample_name}.err"
+
+    """
+    printf ${params.countReads_runfastp}
+    touch ${error_log}
+    """
+}
+
+process fastp {
+    /**
+    * confirm that there > 100k reads after cleaning with fastp
+    */
+
+    tag { sample_name }
+
+    publishDir "${params.output_dir}/$sample_name/raw_read_QC_reports", mode: 'copy', pattern: '*.json'
+    publishDir "${params.output_dir}/$sample_name/output_reads", mode: 'copy', pattern: '*.fq.gz'
+    publishDir "${params.output_dir}/$sample_name", mode: 'copy', overwrite: 'true', pattern: '*.err'
+
+    memory '5 GB'
+
+    input:
+    tuple val(sample_name), path(fq1), path(fq2), val(run_fastp)
+
+    when:
+    run_fastp =~ /${sample_name}/
+
+    output:
+    tuple val(sample_name), path("${sample_name}_cleaned_1.fq.gz"), path("${sample_name}_cleaned_2.fq.gz"), stdout, emit: fastp_fqs
+    path("${sample_name}_fastp.json", emit: fastp_json)
+    path("${sample_name}.err", emit: fastp_log)
+
+    script:
+    clean_fq1  = "${sample_name}_cleaned_1.fq.gz"
+    clean_fq2  = "${sample_name}_cleaned_2.fq.gz"
+    fastp_json = "${sample_name}_fastp.json"
+    fastp_html = "${sample_name}_fastp.html"
+    error_log  = "${sample_name}.err"
+
+    """
+    fastp -i $fq1 -I $fq2 -o ${clean_fq1} -O ${clean_fq2} -j ${fastp_json} -h ${fastp_html} --length_required 50 --average_qual 10 --low_complexity_filter --correction --cut_right --cut_tail --cut_tail_window_size 1 --cut_tail_mean_quality 20
+
+    rm -rf ${fastp_html}
+
+    num_reads=\$(fqtools count $fq1 $fq2)
+
+    if (( \$num_reads > 100000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have > 100k pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    """
+
+    stub:
+    clean_fq1  = "${sample_name}_cleaned_1.fq.gz"
+    clean_fq2  = "${sample_name}_cleaned_2.fq.gz"
+    fastp_json = "${sample_name}_fastp.json"
+    fastp_html = "${sample_name}_fastp.html"
+    error_log  = "${sample_name}.err"
+
+    """
+    printf ${params.fastp_enoughreads}
+    touch ${error_log}
+    touch ${clean_fq1}
+    touch ${clean_fq2}
+    touch ${fastp_json}
+    touch ${fastp_html}
+    """
+}
+
+
 process fastQC {
   /**
   * run FastQC on each fastq pair and copy reports to a subdir in outputdir
@@ -52,10 +149,13 @@ process fastQC {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
 
   output:
   path("*", emit: fastQC_report)
+
+  when:
+  enough_reads =~ /${sample_name}/
 
   script:
   fqc_log = "${sample_name}fqc.log"
@@ -113,7 +213,7 @@ process trimGalore {
   memory '10 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
 
   output:
   tuple path("${fq1}_trimming_report.txt"), path("${fq2}_trimming_report.txt"), emit: tg_reports
@@ -152,8 +252,7 @@ process map2Ref {
   publishDir "${params.output_dir}/$sample_name/preprocessing/Map", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  tuple path(trimmed_fq1), path(trimmed_fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(ref_bt2index)
 
   output:
@@ -168,7 +267,7 @@ process map2Ref {
 
   """
   echo $ref_bt2index
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.genome}/${params.genome} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.ref}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
   """
 
   stub:
@@ -181,36 +280,37 @@ process map2Ref {
   """
 }
 
-process deduplication {
+process picard {
   /**
   * run picard to perform deduplication on reads
   */
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/Dedup", mode: 'copy'
+  publishDir "${params.output_dir}/$sample_name/preprocessing/Map", mode: 'copy'
 
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(bam)
 
   output:
-  path("${sample_name}_dedup.bam"), emit: dedup_bam
+  path("${sample_name}_grouped.bam"), emit: grouped_bam
   path("${sample_name}_metrics.txt"), emit: dedup_metrics
 
   script:
   dedup_log = "${sample_name}_dedup.log"
   """
   java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log
+  java -jar /usr/local/bin/picard.jar AddOrReplaceReadGroups I=${bam} O=${sample_name}_grouped.bam SORT_ORDER=coordinate RGID=1 RGPU=bc RGLB=lib RGPL=illumina RGSM=${sample_name} CREATE_INDEX=True
   """
 
   stub:
-  dedup_bam = "${sample_name}_dedup.bam"
+  grouped_bam = "${sample_name}_grouped.bam"
   metrics = "${sample_name}_metrics.txt"
 
   """
-  touch ${dedup_bam}
+  touch ${grouped_bam}
   touch ${metrics}
   """
 }
@@ -226,7 +326,7 @@ process qualimap {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(dedup_bam)
 
   output:
@@ -248,7 +348,7 @@ process gini {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(bam)
 
   output:
@@ -263,14 +363,16 @@ process gini {
 
   stub:
   gg_file = "${sample_name}.GG"
+  doc_bed = "${sample_name}.doc.bed"
   """
   touch ${gg_file}
+  touch ${doc_bed}
   """
 }
 
 process summarise {
   /**
-  * calculate the gini of mapped read coverage
+  * extract samtools stats
   */
   tag { sample_name }
 
@@ -279,24 +381,29 @@ process summarise {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(bam)
-  path(doc_bed)
-  path(GG)
 
   output:
+  path "${sample_name}.GG", emit: GG
   path "${sample_name}_mapstats.json", emit: mapstats_json
 
   script:
   """
+  samtools depth -a ${bam} > ${sample_name}.doc.bed
+  python3 ${baseDir}/bin/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
   samtools index ${bam}
   samtools stats ${bam} > tmp.stats
-  python3 ${baseDir}/scripts/parse_samtools_stats.py ${bam} tmp.stats ${doc_bed} ${GG} > ${sample_name}_mapstats.json
+  python3 ${baseDir}/bin/parse_samtools_stats.py ${bam} tmp.stats ${sample_name}.doc.bed ${sample_name}.GG > ${sample_name}_mapstats.json
   """
 
   stub:
+  gg_file = "${sample_name}.GG"
+  doc_bed = "${sample_name}.doc.bed"
   mapstats_json = "${sample_name}_mapstats.json"
   """
+  touch ${gg_file}
+  touch ${doc_bed}
   touch ${mapstats_json}
   """
 }

@@ -15,12 +15,11 @@ workflow assembly {
 
     take:
       input_files
-      trimmed_fqs
       ref_scaffold_bool
       refdata
 
     main:
-      spades(input_files, trimmed_fqs)
+      spades(input_files)
 
       quast(input_files, refdata, spades.out.scaffolds)
 
