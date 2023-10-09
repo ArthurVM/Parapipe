@@ -78,7 +78,7 @@ process countReads {
 
 process fastp {
     /**
-    * confirm that there > 100k reads after cleaning with fastp
+    * confirm that there > 1M reads after cleaning with fastp
     */
 
     tag { sample_name }
@@ -114,7 +114,7 @@ process fastp {
 
     num_reads=\$(fqtools count $fq1 $fq2)
 
-    if (( \$num_reads > 100000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have > 100k pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > 1000000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have > 1M pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
     stub:
@@ -176,7 +176,7 @@ process fastQC {
 
 process multiQC {
   /**
-  * TODO: this doesn't work at all, I don't know why
+  * run MultiQC to aggregate fastQC reports
   */
 
   publishDir "${params.output_dir}", mode: 'copy'
@@ -217,7 +217,7 @@ process trimGalore {
 
   output:
   tuple path("${fq1}_trimming_report.txt"), path("${fq2}_trimming_report.txt"), emit: tg_reports
-  tuple path("*_val_1.*"), path("*_val_2.*"), emit: tg_fqs
+  tuple val(sample_name), path("*_val_1.*"), path("*_val_2.*"), emit: tg_fqs
 
   script:
   tg_log = "${sample_name}_tg.log"
@@ -252,11 +252,11 @@ process map2Ref {
   publishDir "${params.output_dir}/$sample_name/preprocessing/Map", mode: 'copy'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
+  tuple val(sample_name), path(fq1), path(fq2)
   path(ref_bt2index)
 
   output:
-  path("${sample_name}.sorted.bam"), emit: bam
+  tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: bam
   path("${sample_name}_alnStats.txt"), emit: map_stats
 
 
@@ -291,11 +291,10 @@ process picard {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
-  path(bam)
+  tuple val(sample_name), path(bam)
 
   output:
-  path("${sample_name}_grouped.bam"), emit: grouped_bam
+  tuple val(sample_name), path("${sample_name}_grouped.bam"), emit: grouped_bam
   path("${sample_name}_metrics.txt"), emit: dedup_metrics
 
   script:
@@ -337,42 +336,9 @@ process qualimap {
   """
 }
 
-process gini {
-  /**
-  * calculate the gini of mapped read coverage
-  */
-  tag { sample_name }
-
-  publishDir "${params.output_dir}/$sample_name/preprocessing/gini", mode: 'copy'
-
-  memory '5 GB'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
-  path(bam)
-
-  output:
-  path "${sample_name}.GG", emit: GG
-  path "${sample_name}.doc.bed", emit: doc_bed
-
-  script:
-  """
-  samtools depth -a ${bam} > ${sample_name}.doc.bed
-  python3 /NGS-Gini-Analysis-Toolkit-0.1-alpha/src/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
-  """
-
-  stub:
-  gg_file = "${sample_name}.GG"
-  doc_bed = "${sample_name}.doc.bed"
-  """
-  touch ${gg_file}
-  touch ${doc_bed}
-  """
-}
-
 process summarise {
   /**
-  * extract samtools stats
+  * extract mapping stats and produce JSON summmary
   */
   tag { sample_name }
 
@@ -381,8 +347,7 @@ process summarise {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
-  path(bam)
+  tuple val(sample_name), path(bam)
 
   output:
   path "${sample_name}.GG", emit: GG

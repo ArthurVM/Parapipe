@@ -8,7 +8,7 @@ about.summary="parasite genomics pipeline container"
 
 export DEBIAN_FRONTEND=noninteractive
 
-python_version=3.6.5
+python_version=3.9.0
 ujson_version=3.2.0
 bowtie2_version=2.3.4.1
 htslib_version=1.12
@@ -17,9 +17,10 @@ bcftools_version=1.12
 bloomine_version=0.1-alpha
 picard_version=2.18.16
 gatk_version=4.4.0.0
+pymoi_version=0.1a
 
-PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core r-cran-car rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake libboost-all-dev tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-17-jdk openjdk-17-jre"
-PYTHON="python2.7 python-dev python3-dev python-setuptools"
+PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core r-cran-car rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-17-jdk openjdk-17-jre"
+PYTHON="python2.7 python-dev python3-dev python-setuptools python3-pip"
 
 apt-get update \
 && apt-get install -y $PACKAGES $PYTHON \
@@ -28,12 +29,15 @@ apt-get update \
 && ./configure --enable-optimizations \
 && make altinstall \
 && cd .. \
-&& ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
-&& ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
-&& pip3 install --upgrade pip \
-&& pip3 install ujson==${ujson_version}
+&& ln -s /usr/local/bin/python${python_version} /usr/local/bin/python3 \
+&& pip install --upgrade pip \
+&& pip install ujson==${ujson_version}
 
-pip3 install biopython
+curl -fsSL https://github.com/ArthurVM/PyMOI/archive/refs/tags/${pymoi_version}.tar.gz | tar -xz \
+&& pip install ./PyMOI-${pymoi_version}/
+
+pip install biopython
+pip install matplotlib
 
 wget https://github.com/broadinstitute/picard/releases/download/${picard_version}/picard.jar -O /usr/local/bin/picard.jar
 
@@ -66,14 +70,6 @@ curl -fsSL https://github.com/samtools/samtools/archive/${samtools_version}.tar.
 && make -C bcftools-${bcftools_version} -j HTSDIR=../htslib-${htslib_version} \
 && make -C bcftools-${bcftools_version} -j HTSDIR=../htslib-${htslib_version} prefix=/usr/local install \
 && rm -r bcftools-${bcftools_version}
-
-curl -fsSL https://github.com/ArthurVM/BlooMine/archive/refs/tags/v${bloomine_version}.tar.gz | tar -xz \
-&& cd BlooMine-${bloomine_version} \
-&& mkdir build; cd build \
-&& cmake .. \
-&& make \
-&& cd ..; rm -r build; cd .. \
-&& mv BlooMine-${bloomine_version} BlooMine
 
 %environment
 export htslib_version=1.12

@@ -14,8 +14,6 @@ log.info"""
 
   Optional Arguments:
     --database          the path to a directory containing vcf files for constructing a phylogenetic tree.
-    --assemble          run assembly wing of Parapipe. Default behaviour is to only run the SNP calling wing.
-    --target_flanks     flaking regions for target loci to extract for the purpose of phylogenetic analysis.
 
   Profiles:
   singularity           run with singularity image

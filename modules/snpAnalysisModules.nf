@@ -1,5 +1,46 @@
 // modules for identifying SNPs in mapped reads
 
+process getMOI {
+  /**
+  * Investigate sample heterozygosity
+  */
+
+  tag { sample_name }
+
+  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
+  publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.json'
+  publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.png'
+
+  memory '5 GB'
+
+  input:
+  tuple val(sample_name), path(grouped_bam)
+  tuple path(fasta), path(gff)
+  val(ref_id)
+
+  output:
+  path("${sample_name}.heterozygosity.json"), emit: moi_json
+  tuple path("${sample_name}.bafscore.png"), path("${sample_name}.bafplot.png"), emit: moi_plots
+
+
+  script:
+  scripts = "${workflow.launchDir}/bin"
+  """
+  samtools faidx ${fasta}
+  gatk --java-options "-Xmx8G" CreateSequenceDictionary R=${fasta} O=${ref_id}.dict
+  gatk --java-options "-Xmx8G" HaplotypeCaller -R ${fasta} -I ${grouped_bam} -O ${sample_name}.vcf
+  python3 ${scripts}/get_moi.py ${sample_name}.vcf ${sample_name}
+  """
+
+  stub:
+  """
+  touch ${sample_name}.heterozygosity.json
+  touch ${sample_name}.bafscore.png
+  touch ${sample_name}.bafplot.png
+  touch ${sample_name}.vcf
+  """
+}
+
 process findSNPs_OLD {
   /**
   * Call snps in mapped reads
@@ -56,19 +97,17 @@ process findSNPs {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
   publishDir "${params.output_dir}/GVCFs", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
 
-  memory '5 GB'
+  memory '8 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(grouped_bam)
+  tuple val(sample_name), path(grouped_bam)
   tuple path(fasta), path(gff)
   val(ref_id)
 
   output:
-  path("${sample_name}.vcf"), emit: vcf
+  tuple val(sample_name), path(grouped_bam), path("${sample_name}.vcf"), emit: vcf
   path("${sample_name}.vcf.gz"), emit: gvcf
   path("*MERGE_AND_PLOT"), emit: merge_and_plot
 
@@ -78,8 +117,6 @@ process findSNPs {
   """
   bcftools mpileup -Ov --gvcf 0 -f ${fasta} ${grouped_bam} | bcftools call --skip-variants indels -m --gvcf 0 -o ${sample_name}.gvcf
   bgzip -ci ${sample_name}.gvcf > ${sample_name}.vcf.gz
-  gatk --java-options "-Xmx8G" CreateSequenceDictionary R=${fasta} O=${ref_id}.dict
-  gatk --java-options "-Xmx8G" HaplotypeCaller -R ${fasta} -I ${grouped_bam} -O ${sample_name}.vcf
 
   a=`ls -la *vcf | wc -l`
   if [ \$a -gt 2 ]
@@ -258,7 +295,7 @@ process makeJSON {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(grouped_bam)
   path(mapstats_json)
   path(newick_tree)
 

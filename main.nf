@@ -5,12 +5,9 @@ nextflow.enable.dsl=2
 
 // import modules
 include {printHelp} from './modules/help.nf'
-include {prepRef} from './workflows/pre_assembly/prepref.nf'
-include {preprocessing} from './workflows/pre_assembly/preprocessing.nf'
-include {SNP_analysis} from './workflows/pre_assembly/analyse_variants.nf'
-include {assembly} from './workflows/post_assembly/assembly.nf'
-include {STR_analysis} from './workflows/post_assembly/STR_analysis.nf'
-include {postAssemblyAnalysis} from './workflows/post_assembly/postAssemblyAnalysis.nf'
+include {prepRef} from './workflows/prepref.nf'
+include {preprocessing} from './workflows/preprocessing.nf'
+include {snp_analysis} from './workflows/snp_analysis.nf'
 
 /*
  ANSI escape codes to allow colour-coded output messages
@@ -45,15 +42,11 @@ if ( params.pattern == null ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
 
-if ( params.assemble == null ) {
-  params.assemble = false
-}
-
 if ( params.database == null ) {
-  database = "false"
+  db = "false"
 }
 else {
-  database = "${workflow.launchDir}/${params.database}"
+  db = "${workflow.launchDir}/${params.database}"
 }
 
 log.info """
@@ -66,8 +59,7 @@ Parameters used:
 --output_dir ${params.output_dir}
 --ref		${params.ref}
 --pattern		${params.pattern}
---assemble  ${params.assemble}
---database  ${database}
+--database  ${db}
 
 Runtime data:
 ------------------------------------------------------------------------
@@ -89,10 +81,10 @@ workflow {
    .set{ input_files }
 
   main:
-    ref_scaffold_bool = params.ref_scaffold
-    assembly_bool = params.assemble
+    /*******************************
+    *    PREPREF WORKFLOW START    *
+    ********************************/
     prepRef(params.ref)
-
 
     /*******************************
     * PREPROCESSING WORKFLOW START *
@@ -102,27 +94,8 @@ workflow {
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    SNP_analysis(input_files, database, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json, params.ref)
+    snp_analysis(db, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json, params.ref)
 
-    /*******************************
-    *   ASSEMBLY WORKFLOW START    *
-    ********************************/
-    // check whether to run the rest of the pipeline or stop after calling SNPs
-    if ( assembly_bool != false ) {
-      // run the whole pipeline
-      assembly(preprocessing.out.trimmed_fqs, ref_scaffold_bool, prepRef.out.refdata)
-
-      assemblies_list = assembly.out.fasta.collect()
-      annotations_list = assembly.out.gff.collect()
-
-      /* TODO: work on this block
-      * if ( ref_scaffold_bool == "yes" ) {
-      *   postAssemblyAnalysis(assemblies_list, annotations_list, prepRef.out.refdata)
-      * }
-      */
-
-      // STR_analysis(input_files, preprocessing.out.trimmed_fqs, assembly.out.fasta, prepRef.out.refdata)
-    }
 }
 
 workflow.onComplete {

@@ -4,8 +4,8 @@ library("optparse")
 library("glue")
 library("wordcloud")
 # library("tidyverse")  # data manipulation
-library("cluster")    # clustering algorithms
-library("factoextra") # clustering algorithms & visualization
+# library("cluster")    # clustering algorithms
+# library("factoextra") # clustering algorithms & visualization
 library("gridExtra")
 library("adegenet")
 
