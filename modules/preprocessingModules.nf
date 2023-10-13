@@ -40,7 +40,7 @@ process checkFqValidity {
 
 process countReads {
     /**
-    * fail sample if there are < 100k raw reads
+    * fail sample if there are < 1M raw reads
     */
 
     tag { sample_name }
@@ -64,7 +64,7 @@ process countReads {
     """
     num_reads=\$(fqtools count $fq1 $fq2)
 
-    if (( \$num_reads > 100000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have > 100k pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > 500000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= 500k pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
     stub:
@@ -114,7 +114,7 @@ process fastp {
 
     num_reads=\$(fqtools count $fq1 $fq2)
 
-    if (( \$num_reads > 1000000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have > 1M pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > 500000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= 500k pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
     stub:
