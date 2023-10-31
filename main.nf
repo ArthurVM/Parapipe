@@ -42,6 +42,13 @@ if ( params.pattern == null ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
 
+if ( params.yaml == null ) {
+    exit 1, "error: please provide a --yaml argument. Use --help for an explenation for the parameters."
+}
+else {
+  yaml = "${workflow.launchDir}/${params.yaml}"
+}
+
 if ( params.database == null ) {
   db = "false"
 }
@@ -55,11 +62,12 @@ P A R A P I P E
 
 Parameters used:
 ------------------------------------------------------------------------
---input_dir ${params.input_dir}
+--input_dir  ${params.input_dir}
 --output_dir ${params.output_dir}
---ref		${params.ref}
---pattern		${params.pattern}
---database  ${db}
+--ref		     ${params.ref}
+--pattern		 ${params.pattern}
+--yaml       ${params.yaml}
+--database   ${db}
 
 Runtime data:
 ------------------------------------------------------------------------
@@ -94,7 +102,7 @@ workflow {
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    snp_analysis(db, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json, params.ref)
+    snp_analysis(db, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json, params.ref, yaml)
 
 }
 

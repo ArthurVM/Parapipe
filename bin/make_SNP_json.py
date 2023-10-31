@@ -2,16 +2,21 @@ import json
 import os, sys
 from matplotlib import pyplot as plt
 
-def process_json(json_file, phylo_tree):
-    with open(phylo_tree, 'r') as fin:
+def process_json(mapstats_json, snp_nwk, iqtree_json):
+    report_json = {}
+
+    with open(snp_nwk, 'r') as fin:
         tree = fin.read().strip("\n")
 
-    with open(json_file, 'r') as j:
-        report_json = json.loads(j.read())
+    with open(mapstats_json, 'r') as j:
+        report_json["mapping"] = json.loads(j.read())
 
-    report_json["phylo"] = {}
-    report_json["phylo"]["format"] = "newick"
-    report_json["phylo"]["tree"] = tree
+    with open(iqtree_json, 'r') as j:
+        report_json["sequence_phylo"] = json.loads(j.read())
+
+    report_json["snp_phylo"] = {}
+    report_json["snp_phylo"]["format"] = "newick"
+    report_json["snp_phylo"]["tree"] = tree
 
     print(json.dumps(report_json, indent=4))
 
@@ -54,8 +59,8 @@ def makehtml(map_stats, phylo_tree, sampleID):
     with open("./report.html", "w") as htmlout:
         htmlout.write(html)
 
-def main(json_file, phylo_tree):
-    process_json(json_file, phylo_tree)
+def main(mapstats_json, snp_nwk, iqtree_json):
+    process_json(mapstats_json, snp_nwk, iqtree_json)
     # make_plots(map_stats['coverage_breadth'], map_stats['gg_array'])
     #
     # makehtml(map_stats, phylo_tree, os.path.splitext(os.path.basename(json_file))[0])
@@ -63,4 +68,4 @@ def main(json_file, phylo_tree):
 if __name__=="__main__":
     # main(sys.argv[1])
     # main("/home/amorris/BioInf/Parapipe/PRJNA634014_H/mapping_stats/SRR11818073_mapstats.json", "/home/amorris/BioInf/Parapipe/PRJNA634014_H/GVCFs/tree.nwk")
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

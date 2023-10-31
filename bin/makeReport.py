@@ -174,7 +174,7 @@ def make_plots(json_data):
     def make_map_table(mapping_stats):
         plt.style.use('ggplot')
 
-        array_names = ["coverage_breadth", "gg_array"]
+        array_names = ["coverage_breadth_hist", "gg_array"]
 
         ordered_list = []
 
@@ -216,7 +216,7 @@ def make_plots(json_data):
         return figout
 
     make_plot_dir()
-    cov_plot = make_cov_plot(json_data["mapping_stats"]["coverage_breadth"])
+    cov_plot = make_cov_plot(json_data["mapping_stats"]["coverage_breadth_hist"])
     phylo_plot = make_phylo_plot(json_data["phylo"]["tree"])
     map_tab = make_map_table(json_data["mapping_stats"])
     gg_curve = make_gg_plot(json_data["mapping_stats"]["gg_array"])

@@ -85,11 +85,12 @@ def parse_samtools_stats_file(infile, doc_bed, genome_size):
                     )
                 coverage_hist[pos] = count
 
-    mean_DOC, median_DOC = parse_doc_bed(doc_bed)
+    mean_DOC, median_DOC, boc = parse_doc_bed(doc_bed)
     stats["mean_depth_of_coverage"] = mean_DOC
     stats["median_depth_of_coverage"] = median_DOC
+    stats["reference_coverage"] = boc
 
-    stats["coverage_breadth"] = coverage_hist_to_coverage_breadth(
+    stats["coverage_breadth_hist"] = coverage_hist_to_coverage_breadth(
         coverage_hist, genome_size
     )
     stats["genome_size"] = genome_size
@@ -121,10 +122,13 @@ def parse_doc_bed(doc_bed):
     with open(doc_bed, 'r') as fin:
         cov_list = [int(line.strip('\n').split('\t')[-1]) for line in fin.readlines()]
 
-    mean_DOC = np.mean(cov_list)
-    median_DOC = np.median(cov_list)
+    filtered_cov_list = [c for c in cov_list if c >= 1]
 
-    return mean_DOC, median_DOC
+    boc = len(filtered_cov_list)/len(cov_list)
+    mean_DOC = np.mean(filtered_cov_list)
+    median_DOC = np.median(filtered_cov_list)
+
+    return mean_DOC, median_DOC, boc
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

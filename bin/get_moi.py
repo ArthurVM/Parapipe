@@ -7,6 +7,24 @@ from pymoi.moi import *
 from pymoi.parse import *
 from pymoi.simdist import SimDist
 
+def gen_empty_plot(save_path):
+    # Create an empty plot
+    fig, ax = plt.subplots()
+
+    # Add the text to the plot
+    text = "too few heterozygous alleles detected"
+    ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=16, color='red')
+
+    # Remove axis labels and ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+
+    # Save the plot as a PNG image
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+
+
 def main(vcf_file, sample_id):
 
     fit_fig_path = f"./{sample_id}.bafscore.png"
@@ -16,15 +34,29 @@ def main(vcf_file, sample_id):
     print("constructing BAF matrix")
     baf_matrix, bac_matrix = make_baf_matrix(lines, sample_id, filter_homo=True)
 
-    gmm = finite_mixture_model(baf_matrix, max_k=5, responsibility_upper=0.1, plot_cluster_fit=True)
-    plt.savefig(fit_fig_path, dpi='figure', format='png')
-    plot_baf(baf_matrix, gmm)
-    plt.savefig(cluster_fig_path, dpi='figure', format='png')
+    ## check that there are a sufficient number of heterozygous alleles
+    if len(baf_matrix) >= 20:
+        gmm = finite_mixture_model(baf_matrix, max_k=5, responsibility_upper=0.1, plot_cluster_fit=True)
+        plt.savefig(fit_fig_path, dpi='figure', format='png')
+        plot_baf(baf_matrix, gmm)
+        plt.savefig(cluster_fig_path, dpi='figure', format='png')
+        k = gmm.k
+        fit_score = gmm.score
+        boundary_prob = gmm.prob
+
+    ## if not then produce an empty JSON
+    else:
+        print("Fewer than 20 heterozygous alleles present. Exiting...")
+        k = None
+        fit_score = None
+        boundary_prob = None
+        gen_empty_plot(fit_fig_path)
+        gen_empty_plot(cluster_fig_path)
 
     resultsdict = { "sample_id" : sample_id,
-                    "k" : gmm.k,
-                    "fit_score" : gmm.score,
-                    "boundary_prob" : gmm.prob,
+                    "k" : k,
+                    "fit_score" : fit_score,
+                    "boundary_prob" : boundary_prob,
                     "fit_fig_path" : fit_fig_path,
                     "cluster_fig_path" : cluster_fig_path }
 

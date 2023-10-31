@@ -7,7 +7,7 @@ process getMOI {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
+  publishDir "${params.output_dir}/${sample_name}/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
   publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.json'
   publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.png'
 
@@ -41,52 +41,47 @@ process getMOI {
   """
 }
 
-process findSNPs_OLD {
+process phylo {
   /**
-  * Call snps in mapped reads
+  * Run Phylogenetic analysis for sequence and SNP typing schemes
   */
 
-  tag { sample_name }
-
-  publishDir "${params.output_dir}/$sample_name/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf'
-  publishDir "${params.output_dir}/GVCFs", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
+  publishDir "${params.output_dir}/${sample_name}/phylo", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(dedup_bam)
+  path(grouped_bam)
   tuple path(fasta), path(gff)
+  val(database)
+  path(vars_yaml)
 
   output:
-  path("${sample_name}.var.vcf"), emit: vcf
-  path("${sample_name}.vcf.gz"), emit: gvcf
-  path("*MERGE_AND_PLOT"), emit: merge_and_plot
+  path("*.gvcf.gz"), emit: st_vcf
+  path("snps_merged.vcf.gz"), emit: snp_vcf
+  path("snp_tree.nwk"), emit: snp_nwk
+  path("*png"), emit: snp_png
+  path("iqtree.json"), emit: iqtree_json
+  path("*iqtree"), emit: iqtree
+  path("*mldist"), emit: mldist
 
   script:
-  error_log = "${sample_name}.err"
-
+  scripts = "${workflow.launchDir}/bin"
   """
-  bcftools mpileup -Ov --gvcf 0 -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m --gvcf 0 -o ${sample_name}.gvcf
-  bgzip -ci ${sample_name}.gvcf > ${sample_name}.vcf.gz
-  bcftools mpileup --skip-indels -f ${fasta} ${dedup_bam} | bcftools call --skip-variants indels -m -O v --variants-only -o ${sample_name}.var.vcf -
-
-  a=`ll *vcf.gz | wc -l`
+  python3 ${scripts}/get_MLVA.py --bams ./ ${vars_yaml} ${fasta}
+  a=`ls -la *vcf | wc -l`
   if [ \$a -gt 2 ]
     then
-      touch ./MERGE_AND_PLOT;
+      bcftools merge --force-samples -g ${fasta} -m snps ./*gvcf.gz -o snps.tmp.gvcf
+      bcftools filter -O z -o snps_merged.vcf.gz -i '%QUAL>=30' snps.tmp.gvcf
+      Rscript ${scripts}/snpPhylo.R -v snps_merged.vcf.gz
     else
-      touch ./DONT_MERGE_AND_PLOT;
+      touch NO_TREE.png
   fi
   """
 
   stub:
-  error_log  = "${sample_name}.err"
-
   """
-  touch ${sample_name}.var.vcf
-  touch ${sample_name}.vcf.gz
-  touch ./MERGE_AND_PLOT
   """
 }
 
@@ -107,7 +102,6 @@ process findSNPs {
   val(ref_id)
 
   output:
-  tuple val(sample_name), path(grouped_bam), path("${sample_name}.vcf"), emit: vcf
   path("${sample_name}.vcf.gz"), emit: gvcf
   path("*MERGE_AND_PLOT"), emit: merge_and_plot
 
@@ -207,82 +201,6 @@ process makeVCFtree {
   """
 }
 
-process preprocessForPlotting {
-  /**
-  * preprocesses FASTA and VCF files for plotting
-  */
-
-  tag { sample_name }
-
-  memory '5 GB'
-
-  errorStrategy 'ignore'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(vcf)
-  tuple path(fasta), path(gff)
-
-  output:
-  path("fasta_split"), emit: fasta_path
-  path("vcf_split"), emit: vcf_path
-
-  script:
-  scripts = "${workflow.launchDir}/bin"
-  """
-  echo "Splitting ${fasta}..."
-  python3 ${scripts}/preprocess_FASTA_for_plotting.py ${fasta}
-  mkdir fasta_split
-  mv tmp.*.fasta fasta_split
-
-  echo "Splitting ${vcf} by chromosome ID..."
-  python3 ${scripts}/splitVCF.py ${vcf}
-  """
-
-  stub:
-  """
-  mkdir fasta_split
-  mkdir vcf_split
-  """
-}
-
-process plotSNP {
-  /**
-  * Plot SNPs across each chromosome
-  */
-
-  tag { sample_name }
-
-  memory '5 GB'
-
-  errorStrategy 'ignore'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(vcf_path)
-  path(fasta_path)
-  tuple path(fasta), path(gff)
-
-  output:
-  path("snpQC_plots"), emit: snpQC_plots
-
-  script:
-  scripts = "${workflow.launchDir}/bin"
-  """
-  echo "Creating plots..."
-  Rscript ${scripts}/SNPdist.R -v ${vcf_path} -f ${fasta_path} -g ${gff}
-  mkdir snpQC_plots
-  mv *jpeg snpQC_plots
-  """
-
-  stub:
-  """
-  touch test.jpeg
-  mkdir snpQC_plots
-  mv *jpeg snpQC_plot
-  """
-}
-
 process makeJSON {
   /**
   * Make JSON for SNP module
@@ -290,14 +208,15 @@ process makeJSON {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/${sample_name}/", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 
   input:
   tuple val(sample_name), path(grouped_bam)
   path(mapstats_json)
-  path(newick_tree)
+  path(snp_nwk)
+  path(iqtree_json)
 
   output:
   path("${sample_name}_SNPreport.json"), emit: snpreport_json
@@ -305,7 +224,7 @@ process makeJSON {
   script:
   scripts = "${workflow.launchDir}/bin"
   """
-  python3 ${scripts}/make_SNP_json.py ${mapstats_json} ${newick_tree} > ${sample_name}_SNPreport.json
+  python3 ${scripts}/make_SNP_json.py ${mapstats_json} ${snp_nwk} ${iqtree_json} > ${sample_name}_SNPreport.json
   """
 
   stub:
@@ -314,14 +233,14 @@ process makeJSON {
   """
 }
 
-process makeSNPreport {
+process makeReport {
   /**
   * Make report for SNP module
   */
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/", mode: 'copy', overwrite: 'true'
+  publishDir "${params.output_dir}/${sample_name}/", mode: 'copy', overwrite: 'true'
 
   memory '5 GB'
 

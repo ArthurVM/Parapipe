@@ -112,7 +112,7 @@ process fastp {
 
     rm -rf ${fastp_html}
 
-    num_reads=\$(fqtools count $fq1 $fq2)
+    num_reads=\$(fqtools count ${clean_fq1} ${clean_fq2})
 
     if (( \$num_reads > 500000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= 500k pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
@@ -133,7 +133,6 @@ process fastp {
     touch ${fastp_html}
     """
 }
-
 
 process fastQC {
   /**
@@ -295,15 +294,14 @@ process picard {
 
   output:
   tuple val(sample_name), path("${sample_name}_grouped.bam"), emit: grouped_bam
-  path("${sample_name}_metrics.txt"), emit: dedup_metrics
+  // path("${sample_name}_metrics.txt"), emit: dedup_metrics
 
   script:
   dedup_log = "${sample_name}_dedup.log"
+  dedup_line="  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log"
   """
-  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log
   java -jar /usr/local/bin/picard.jar AddOrReplaceReadGroups I=${bam} O=${sample_name}_grouped.bam SORT_ORDER=coordinate RGID=1 RGPU=bc RGLB=lib RGPL=illumina RGSM=${sample_name} CREATE_INDEX=True
   """
-
   stub:
   grouped_bam = "${sample_name}_grouped.bam"
   metrics = "${sample_name}_metrics.txt"

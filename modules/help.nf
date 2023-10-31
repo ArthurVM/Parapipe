@@ -11,6 +11,7 @@ log.info"""
     --output_dir        output directory. Module output files will be written to subdirectories within this parent directory.
     --pattern           regex pattern to match pairs of fastq files.
     --ref               the species ID of the reference genome to download and map against.
+    --yaml              YAML file containing typing profiles.
 
   Optional Arguments:
     --database          the path to a directory containing vcf files for constructing a phylogenetic tree.
