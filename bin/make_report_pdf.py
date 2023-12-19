@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import calendar
+import argparse
 from datetime import datetime
 from io import StringIO
 from fpdf import FPDF
@@ -53,23 +54,33 @@ class PDF(FPDF):
         self.set_text_color(128)
         self.cell(0, 10, 'Page ' + str(self.page_no()), 0, 0, 'C')
 
-    def page_body(self, images):
+    def page_body(self, images, big_small=False, small_big=False):
         # Determine how many plots there are per page and set positions
         # and margins accordingly
+        if big_small and small_big:
+            raise ValueError("Key word arguments big_small and small_big may not be used together.")
+
         if len(images) == 3:
             self.image(images[0], 15, 25, self.WIDTH - 30)
             self.image(images[1], 15, self.WIDTH / 2 + 5, self.WIDTH - 30)
             self.image(images[2], 15, self.WIDTH / 2 + 90, self.WIDTH - 30)
         elif len(images) == 2:
-            self.image(images[0], 15, 25, self.WIDTH - 30)
-            self.image(images[1], 15, self.WIDTH / 2 + 50, self.WIDTH - 30)
+            if big_small:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 90, self.WIDTH - 30)
+            elif small_big:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 5, self.WIDTH - 30)
+            else:
+                self.image(images[0], 15, 25, self.WIDTH - 30)
+                self.image(images[1], 15, self.WIDTH / 2 + 50, self.WIDTH - 30)
         else:
             self.image(images[0], 15, 40, self.WIDTH - 30)
 
-    def print_page(self, images):
+    def print_page(self, images, big_small=False, small_big=False):
         # Generates the report
         self.add_page()
-        self.page_body(images)
+        self.page_body(images, big_small, small_big)
 
 def parse_json(json_file):
 
@@ -122,7 +133,7 @@ def make_plots(json_data):
         return figout
 
     def make_gg_plot(gg_dict):
-        gg_df = pd.DataFrame([ [int(k), float(v)] for k, v in json_data["mapping_stats"]["gg_array"].items() ])
+        gg_df = pd.DataFrame([ [int(k), float(v)] for k, v in json_data["mapping"]["mapping_stats"]["gg_array"].items() ])
 
         plt.style.use('ggplot')
         GG_f, GG_p = plt.subplots(1, figsize=(8, 4), dpi=100)
@@ -152,21 +163,21 @@ def make_plots(json_data):
 
         return figout
 
-    def make_phylo_plot(treedata):
+    def make_phylo_plot(treedata, format, prefix):
 
         plt.style.use('ggplot')
 
         handle = StringIO(treedata)
-        tree = Phylo.read(handle, json_data["phylo"]["format"])
+        tree = Phylo.read(handle, format)
         tree.ladderize()
 
-        fig = plt.figure(figsize=(15, 22), dpi=100)
+        fig = plt.figure(figsize=(10, 10), dpi=100)
         axes = fig.add_subplot(1, 1, 1)
         Phylo.draw(tree, axes=axes, do_show=False)
 
-        plt.title("SNP Distance")
+        plt.title(prefix)
 
-        figout = "./plots/phylo.jpeg"
+        figout = f"./plots/{prefix}_phylo.jpeg"
         plt.savefig(figout)
 
         return figout
@@ -215,40 +226,157 @@ def make_plots(json_data):
 
         return figout
 
+    def make_st_table(st_stats):
+        plt.style.use('ggplot')
+
+        figs = {}
+
+        for scheme, loci in st_stats.items():
+            ordered_list = []
+
+            ## manually insert fields into the list to maintain some meaningful order
+            ## mapping fields
+            ordered_list.append(["Locus", "DOC", "BOC"])
+
+            for locus, cov in loci.items():
+                ordered_list.append([locus, np.round(float(cov["DOC"]), 3), np.round(float(cov["BOC"]), 3)])
+
+            # hide axes
+            fig, ax = plt.subplots(figsize=(8, 4.5), dpi=100)
+
+            # hide axes
+            fig.patch.set_visible(False)
+            ax.axis('off')
+            ax.axis('tight')
+
+            ax.table(ordered_list, colLabels=None, loc='center')
+
+            fig.tight_layout()
+
+            figout = f"./plots/{scheme}_stats.jpeg"
+            plt.savefig(figout)
+
+            figs[scheme] = figout
+
+        return figs
+
+    def gen_empty_plot():
+        save_path = figout = f"./plots/SNP_phylo.jpeg"
+        # Create an empty plot
+        fig, ax = plt.subplots()
+
+        # Add the text to the plot
+        text = "Coverage too low for inclusion in SNP tree"
+        ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=16, color='red')
+
+        # Remove axis labels and ticks
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+
+        # Save the plot as a PNG image
+        plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+        return save_path
+
     make_plot_dir()
-    cov_plot = make_cov_plot(json_data["mapping_stats"]["coverage_breadth_hist"])
-    phylo_plot = make_phylo_plot(json_data["phylo"]["tree"])
-    map_tab = make_map_table(json_data["mapping_stats"])
-    gg_curve = make_gg_plot(json_data["mapping_stats"]["gg_array"])
+    cov_plot = make_cov_plot(json_data["mapping"]["mapping_stats"]["coverage_breadth_hist"])
+    map_tab = make_map_table(json_data["mapping"]["mapping_stats"])
+    st_tab = make_st_table(json_data["st_stats"])
+    gg_curve = make_gg_plot(json_data["mapping"]["mapping_stats"]["gg_array"])
 
-    return [[map_tab, cov_plot, gg_curve]], [[phylo_plot]]
+    ## check that this dataset passes the coverage threshold for inclusion into the SNP tree
+    if json_data["mapping"]["mapping_stats"]["coverage_breadth_hist"]["5"] >= 95.0:
+        snp_phylo_plot = make_phylo_plot(json_data["snp_phylo"]["tree"], json_data["snp_phylo"]["format"], "SNP")
+    else:
+        snp_phylo_plot = gen_empty_plot()
 
-def main(json_file, jpeg_dir, sample_ID):
-    json_data = parse_json(json_file)
-    paired_covplots = pair_jpegs(jpeg_dir)
+    st_plots = []
+    for st, data in json_data["sequence_phylo"].items():
+        st_plot = make_phylo_plot(data["contree"], "newick", st)
+        st_plots.append([st, st_plot])
 
-    plots, phylo_plots = make_plots(json_data)
+    return map_tab, cov_plot, gg_curve, snp_phylo_plot, st_plots, st_tab
+
+def make_moi_table(moi_stats):
+    plt.style.use('ggplot')
+
+    ordered_list = []
+
+    ## manually insert fields into the list to maintain some meaningful order
+    ## mapping fields
+    ordered_list.append(["k", str(moi_stats["k"])])
+    ordered_list.append(["Fit Score", str(moi_stats["fit_score"])])
+    ordered_list.append(["Boundary Probability", str(moi_stats["boundary_prob"])])
+
+    # df = pd.DataFrame(ordered_list)
+
+    # hide axes
+    fig, ax = plt.subplots(figsize=(8, 4.5), dpi=100)
+
+    # hide axes
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
+
+    ax.table(ordered_list, colLabels=None, loc='center')
+
+    fig.tight_layout()
+
+    figout = "./plots/moistats.jpeg"
+    plt.savefig(figout)
+
+    return figout
+
+def parse_args(argv):
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('script_path', action='store', help=argparse.SUPPRESS)
+    parser.add_argument('--env', action='store', nargs=1, help='JSON containing run environment info.')
+    parser.add_argument('--report', action='store', nargs=1, help='JSON report produced by Parapipe.')
+    parser.add_argument('--id', action='store', nargs=1, help='Sample ID.')
+    parser.add_argument('--moi_json', action='store', nargs=1, help='MOI JSON report.')
+    parser.add_argument('--moi_plots', action='store', nargs=2, help='MOI plots.')
+    parser.add_argument('--png', action='store', nargs="*", help='PNG plots.')
+
+    args = parser.parse_args(argv)
+
+    return args
+
+def main(argv):
+
+    args = parse_args(argv)
+
+    env = parse_json(args.env[0])
+    report = parse_json(args.report[0])
+    moi_stats = parse_json(args.moi_json[0])
+
+    map_tab, cov_plot, gg_curve, snp_phylo_plot, st_plots, st_tab = make_plots(report)
+    moi_tab = make_moi_table(moi_stats)
 
     pdf = PDF()
 
-    for i, elem in enumerate(plots):
-        pdf.print_page(elem)
-        if i == 0:
-            pdf.write_title(os.path.basename(json_file).split("_SNPreport")[0])
+    pdf.print_page([map_tab, cov_plot, gg_curve])
+    pdf.write_title(args.id[0])
 
-    for elem in phylo_plots:
-        pdf.print_page(elem)
-        pdf.write_subheader("Phylogenetics")
+    pdf.print_page([f"{args.id[0]}.png"])
+    pdf.write_subheader("wgSNP tree")
 
-    for i, elem in enumerate(paired_covplots):
+    pdf.print_page(["./pca.png"])
+    pdf.write_subheader("wgSNP PCA")
 
-        chr = os.path.basename(elem[0]).split("_chrom")[0]
-        pdf.print_page(elem)
-        pdf.write_subheader(f"Coverage plots for chromosome {chr}")
+    for scheme, st_plot in st_plots:
+        pdf.print_page([st_plot, st_tab[scheme]], big_small=True)
+        pdf.write_subheader(f"{scheme}")
 
-    pdf.output(f'{sample_ID}_report.pdf', 'F')
+    pdf.print_page([moi_tab, moi_stats["cluster_fig_path"]], small_big=True)
+    pdf.write_subheader("Heterozygosity")
+    pdf.print_page([moi_stats["fit_fig_path"]])
+
+    pdf.output(f'{args.id[0]}_report.pdf', 'F')
 
 if __name__=="__main__":
     # main("/home/amorris/BioInf/Parapipe/C_hom_SMALL_ass/UKH37_4/UKH37_4_SNPreport.json", \
     #     "/home/amorris/BioInf/Parapipe/report_WD/chromplots/")
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv)

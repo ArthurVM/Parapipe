@@ -19,7 +19,7 @@ process getRefData {
 
   script:
   """
-  cp ${baseDir}/resources/ref/$genome_id/* ./
+  cp ${baseDir}/resources/ref/${genome_id}/* ./
   """
 
   stub:
@@ -46,8 +46,6 @@ process indexRefData {
   * index and preprocess reference fasta files
   */
 
-  publishDir "${params.output_dir}/REFDATA/", mode: 'copy', overwrite: 'true'
-
   memory '5 GB'
 
   input:
@@ -66,11 +64,12 @@ process indexRefData {
   """
 
   stub:
-  bt2_index = "./${params.genome}"
+  bt2_index = "./${genome_id}"
   reffaidx = "${fasta}.fai"
 
   """
   mkdir ${bt2_index}
   touch ${reffaidx}
+  touch ${genome_id}
   """
 }

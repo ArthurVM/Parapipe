@@ -7,11 +7,12 @@ about.summary="Parapipe preprocessing container"
 %post
 
 python_version=3.6.5
+trimgalore_version=0.6.10
+cutadapt_version=3.7
 ngstoolkit_version=0.1-alpha
 fastqc_version=0.11.9
-multiqc_version=1.11
+multiqc_version=1.15
 fqtools_version=2.3
-trimgalore_version=0.6.7
 bowtie2_version=2.3.4.1
 htslib_version=1.12
 samtools_version=1.12
@@ -19,8 +20,8 @@ bcftools_version=1.12
 picard_version=2.18.16
 gatk_version=4.4.0.0
 
-PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq r-base-core rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jre-headless"
-PYTHON="python2.7 python-dev python3-dev python-setuptools"
+PACKAGES="procps curl git build-essential wget zlib1g-dev pkg-config jq rsync libtbb-dev autoconf libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev perl libjson-perl libfindbin-libs-perl cpanminus jq cmake tabix pkg-config libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-11-jdk openjdk-11-jre-headless"
+PYTHON="python2.7 python-dev python3-dev python-setuptools python3-pip"
 
 apt-get update \
 && apt-get install -y $PACKAGES $PYTHON \
@@ -29,13 +30,18 @@ apt-get update \
 && ./configure --enable-optimizations \
 && make altinstall \
 && cd .. \
-&& ln -s /usr/local/bin/python3.6 /usr/local/bin/python3 \
-&& ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip3 \
+&& ln -s /usr/local/bin/python${python_version} /usr/local/bin/python3 \
 && pip3 install --upgrade pip
 
-pip3 install biopython
+pip install networkx==2.5.1
 
+python3.6 -m pip install multiqc==${multiqc_version}
+python3 -m pip install matplotlib
+
+pip3 install biopython
 pip3 install pysam
+
+python3.6 -m pip install cutadapt==${cutadapt_version}
 
 curl -fsSL https://github.com/ArthurVM/NGS-Gini-Analysis-Toolkit/archive/refs/tags/v${ngstoolkit_version}.tar.gz | tar -xz \
 && pip3 install -r ./NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/dependancies.txt
@@ -46,24 +52,6 @@ curl -fsSL "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${f
 && mv FastQC/* /usr/local/bin \
 && rm fastqc_v${fastqc_version}.zip \
 && rm -r FastQC
-
-python3 -m pip install --upgrade cutadapt
-
-curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}.tar.gz | tar -xz \
-&& mv htslib-${htslib_version} fqtools-${fqtools_version} \
-&& cd fqtools-${fqtools_version} \
-&& mv htslib-${htslib_version} htslib \
-&& cd htslib \
-&& autoreconf -i \
-&& ./configure \
-&& make \
-&& make install \
-&& cd .. \
-&& make \
-&& mv bin/* /usr/local/bin \
-&& chmod +x /usr/local/bin/fqtools \
-&& cd .. \
-&& rm -r fqtools-${fqtools_version}
 
 curl -fsSL "https://github.com/FelixKrueger/TrimGalore/archive/refs/tags/${trimgalore_version}.tar.gz" | tar -xz \
 && mv ./TrimGalore-${trimgalore_version}/trim_galore /usr/local/bin \
@@ -107,11 +95,6 @@ curl -fsSL https://github.com/alastair-droop/fqtools/archive/v${fqtools_version}
 && chmod +x /usr/local/bin/fqtools \
 && cd .. \
 && rm -r fqtools-${fqtools_version}
-
-pip install networkx==2.5.1
-
-python3 -m pip install multiqc
-python3 -m pip install matplotlib
 
 %environment
 export htslib_version=1.12

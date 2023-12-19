@@ -9,7 +9,7 @@ process checkFqValidity {
 
   errorStrategy 'ignore'
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing", mode: 'copy', overwrite: 'true', pattern: '*.err'
+  publishDir "${params.output_dir}/${sample_name}/preprocessing", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
   memory '5 GB'
 
@@ -45,7 +45,7 @@ process countReads {
 
     tag { sample_name }
 
-    publishDir "${params.output_dir}/$sample_name", mode: 'copy', overwrite: 'true', pattern: '*.err'
+    publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
     memory '5 GB'
 
@@ -61,6 +61,7 @@ process countReads {
 
     script:
     error_log = "${sample_name}.err"
+
     """
     num_reads=\$(fqtools count $fq1 $fq2)
 
@@ -71,7 +72,7 @@ process countReads {
     error_log = "${sample_name}.err"
 
     """
-    printf ${params.countReads_runfastp}
+    printf ${sample_name}
     touch ${error_log}
     """
 }
@@ -83,9 +84,8 @@ process fastp {
 
     tag { sample_name }
 
-    publishDir "${params.output_dir}/$sample_name/raw_read_QC_reports", mode: 'copy', pattern: '*.json'
-    publishDir "${params.output_dir}/$sample_name/output_reads", mode: 'copy', pattern: '*.fq.gz'
-    publishDir "${params.output_dir}/$sample_name", mode: 'copy', overwrite: 'true', pattern: '*.err'
+    publishDir "${params.output_dir}/${sample_name}/raw_read_QC_reports", mode: 'copy', pattern: '*.json'
+    publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
     memory '5 GB'
 
@@ -125,7 +125,7 @@ process fastp {
     error_log  = "${sample_name}.err"
 
     """
-    printf ${params.fastp_enoughreads}
+    printf ${sample_name}
     touch ${error_log}
     touch ${clean_fq1}
     touch ${clean_fq2}
@@ -207,7 +207,7 @@ process trimGalore {
   */
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/Trim", mode: 'copy', pattern: '*.trimming_report.txt'
+  publishDir "${params.output_dir}/${sample_name}/preprocessing/Trim", mode: 'copy', pattern: '*.trimming_report.txt'
 
   memory '10 GB'
 
@@ -248,16 +248,15 @@ process map2Ref {
   cpus 8
   memory '15 GB'
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/Map", mode: 'copy'
+  publishDir "${params.output_dir}/${sample_name}/preprocessing/Map", mode: 'copy', pattern: '*_alnStats.txt'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
   path(ref_bt2index)
 
   output:
   tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: bam
   path("${sample_name}_alnStats.txt"), emit: map_stats
-
 
   script:
   bam = "${sample_name}.sorted.bam"
@@ -265,8 +264,8 @@ process map2Ref {
   stats = "${sample_name}_alnStats.txt"
 
   """
-  echo $ref_bt2index
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${workflow.launchDir}/${params.output_dir}/REFDATA/${params.ref}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+  echo ${ref_bt2index}
+  bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
   """
 
   stub:
@@ -285,9 +284,9 @@ process picard {
   */
   tag { sample_name }
 
-  publishDir "${params.output_dir}/$sample_name/preprocessing/Map", mode: 'copy'
-
   memory '5 GB'
+
+  publishDir "${params.output_dir}/bams", mode: 'copy', pattern: '*bam'
 
   input:
   tuple val(sample_name), path(bam)
@@ -312,27 +311,6 @@ process picard {
   """
 }
 
-process qualimap {
-  /**
-  * TODO: this doesn't seem to behave as expected. Claims no reads map.
-  */
-  tag { sample_name }
-
-  publishDir "${params.output_dir}/$sample_name/preprocessing/qualimap", mode: 'copy'
-
-  memory '5 GB'
-
-  input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
-  path(dedup_bam)
-
-  output:
-
-  script:
-  """
-  qualimap bamqc -bam ${dedup_bam} -outdir ./ -outformat HTML
-  """
-}
 
 process summarise {
   /**
@@ -340,7 +318,7 @@ process summarise {
   */
   tag { sample_name }
 
-  publishDir "${params.output_dir}/mapping_stats", mode: 'copy'
+  publishDir "${params.output_dir}/mapping_stats", mode: 'copy', pattern: '*.json'
 
   memory '5 GB'
 
@@ -349,7 +327,7 @@ process summarise {
 
   output:
   path "${sample_name}.GG", emit: GG
-  path "${sample_name}_mapstats.json", emit: mapstats_json
+  tuple val(sample_name), path(bam), path("${sample_name}_mapstats.json"), emit: bam_pre_out
 
   script:
   """
@@ -365,6 +343,8 @@ process summarise {
   doc_bed = "${sample_name}.doc.bed"
   mapstats_json = "${sample_name}_mapstats.json"
   """
+  samtools --version
+  python3 -V
   touch ${gg_file}
   touch ${doc_bed}
   touch ${mapstats_json}

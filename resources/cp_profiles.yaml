@@ -1,2 +1,6 @@
-MLVA : "/home/amorris/BioInf/Parapipe/resources/MLVA_ATCC.bed"
-gp60 : "/home/amorris/BioInf/Parapipe/resources/gp60.bed"
+MLVA :
+  bed : /home/amorris/BioInf/Parapipe/resources/MLVA_ATCC.bed
+  missing : 0
+gp60 :
+  bed : /home/amorris/BioInf/Parapipe/resources/gp60.bed
+  missing : 0

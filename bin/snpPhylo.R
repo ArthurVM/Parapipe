@@ -1,9 +1,9 @@
-
 suppressPackageStartupMessages({
   library("vcfR")
   library("ape")
   library("optparse")
   library("glue")
+  # library("tidyverse")  # data manipulation
   library("cluster")    # clustering algorithms
   library("adegenet")
 })
@@ -12,14 +12,14 @@ parseArgs <- function() {
   ## Simple argument parser
 
   option_list = list(
-    make_option(c("-v", "--vcf"), type="character", default=NULL,
-                help="merged vcf file", metavar="character")
+    make_option(c("-a", "--allele_matrix"), type="character", default=NULL,
+                help="allele matrix csv file", metavar="character")
   );
 
   opt_parser = OptionParser(option_list=option_list);
   opt = parse_args(opt_parser);
 
-  if ( is.null(opt$vcf) ){
+  if ( is.null(opt$allele_matrix) ){
     print_help(opt_parser)
     stop("All arguements need to be supplied.\n", call.=FALSE)
   }
@@ -27,30 +27,32 @@ parseArgs <- function() {
   return(opt)
 }
 
-vcf2dist <- function(vcf) {
-  gind <- vcfR2genind(read.vcfR( vcf , verbose = FALSE ))
-  gind.mat <- as.matrix(gind$tab)
-  gind.mat[is.na(gind.mat)] <- 0
-  gind.mat[gind.mat==2] <- 1
-  D <- dist(gind.mat)
+readAlleleMatrix <- function(allele_matrix) {
+  data <- read.csv(allele_matrix, header = TRUE, row.names = 1)
+  D <- as.dist(dist(data, method = "euclidean"))
   return(D)
 }
 
 mp2 <- function(D) {
 
-  tree <- nj(D)
-  plot.phylo(tree, type = "unrooted", edge.width = 1, font = 1, lab4ut = "axial", show.tip.label = TRUE, cex = 1)
-  write.tree(tree, file = "snp_tree.nwk")
+  hclust_result <- hclust(D, method = "complete")
 
-  for ( s in attributes(D)$Labels ) {
+  phylo_tree <- as.phylo(hclust_result)
+  unrooted_tree <- ladderize(phylo_tree)
+
+  for ( s in unrooted_tree$tip.label ) {
     fout <- glue("./{s}.png")
     png(fout, width = 700, height = 700)
 
-    plot.phylo(tree, type = "unrooted", edge.width = 1, font = 1, lab4ut = "axial", show.tip.label = TRUE, cex = 1, tip.color = c("red")[(tree$"tip.label"!=s)+1])
+    # plot.phylo(tree, type = "unrooted", edge.width = 1, font = 1, lab4ut = "axial", show.tip.label = TRUE, cex = 1, tip.color = c("red")[(tree$tip.label!=s)+1])
+    plot(unrooted_tree, sub = NULL, type = "unrooted", lab4ut = "axial", cex = 0.8, tip.color = c("red")[(unrooted_tree$tip.label!=s)+1])
+    nodelabels(pch = 16, col = "blue", cex = 1, srt = 90)
 
-    edgelabels(tex=round(tree$edge.length,1), bg=rgb(.8,.8,1,.8), cex=0.75)
+    edgelabels(tex=round(unrooted_tree$edge.length,1), bg=rgb(.8,.8,1,.8), cex=0.75)
     dev.off()
-  }
+    }
+
+  write.tree(phylo_tree, file = "snp_tree.nwk")
 }
 
 makePCAplot <- function(D) {
@@ -61,38 +63,18 @@ makePCAplot <- function(D) {
   abline(v=0,h=0,col="grey", lty=2)
   title("Principal Coordinate Analysis\n-based on SNP distances-")
   dev.off()
-}
-
-kmc <- function(gind) {
-  png("kmc.png", width = 700, height = 700)
-
-  ## format data
-  gind.mat <- as.matrix(gind$tab)
-  gind.mat[is.na(gind.mat)] <- 0
-  gind.mat[gind.mat==2] <- 1
-  filtered.mat <- gind.mat[ , which(apply(gind.mat, 2, var) != 0)]
-
-  ## automate assigning k
-  optimal_k <- fviz_nbclust(filtered.mat, kmeans, method = "silhouette")
-  k <- which.max(optimal_k$data$y)
-
-  ## generate and plot
-  kmeans_result <- kmeans(filtered.mat, centers = k, nstart = 25)
-  p2 <- fviz_cluster(kmeans_result, data = filtered.mat, geom="point", main=glue("k={k}"))
-
-  grid.arrange(p2, nrow = 1)
-  dev.off()
+  graphics.off()
 }
 
 main <- function(){
   ## Main function
   opt <- parseArgs()
-  vcf=opt$vcf
-  D <- vcf2dist(vcf)
+  allele_matrix <- opt$allele_matrix
+
+  D<-readAlleleMatrix(allele_matrix)
   mp2(D)
 
   makePCAplot(D)
-  # kmc(gind)
 
 }
 

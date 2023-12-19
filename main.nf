@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 
 // import modules
 include {printHelp} from './modules/help.nf'
+include {captureEnv} from './modules/captureEnv.nf'
 include {prepRef} from './workflows/prepref.nf'
 include {preprocessing} from './workflows/preprocessing.nf'
 include {snp_analysis} from './workflows/snp_analysis.nf'
@@ -50,10 +51,10 @@ else {
 }
 
 if ( params.database == null ) {
-  db = "false"
+  params.database = "false"
 }
 else {
-  db = "${workflow.launchDir}/${params.database}"
+  params.database = "${workflow.launchDir}/${params.database}"
 }
 
 log.info """
@@ -67,7 +68,7 @@ Parameters used:
 --ref		     ${params.ref}
 --pattern		 ${params.pattern}
 --yaml       ${params.yaml}
---database   ${db}
+--database   ${params.database}
 
 Runtime data:
 ------------------------------------------------------------------------
@@ -83,12 +84,16 @@ workflow {
   pattern = params.pattern
 	reads = params.input_dir + pattern
 	numfiles = file(reads) // count the number of files
+  db = params.database
 
   Channel.fromFilePairs(reads, flat: true, checkIfExists: true, size: -1)
-   .ifEmpty { error "cannot find any reads matching ${pattern} in ${indir}" }
+   .ifEmpty { error "cannot find any files matching ${pattern} in ${params.input_dir}" }
    .set{ input_files }
 
   main:
+
+    captureEnv(params.input_dir, params.output_dir, params.ref, params.yaml, db)
+
     /*******************************
     *    PREPREF WORKFLOW START    *
     ********************************/
@@ -102,7 +107,7 @@ workflow {
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    snp_analysis(db, preprocessing.out.bam, prepRef.out.refdata, preprocessing.out.mapstats_json, params.ref, yaml)
+    snp_analysis(input_files, captureEnv.out.env_json, db, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, yaml)
 
 }
 

@@ -1,12 +1,10 @@
 import json
 import os, sys
+from collections import defaultdict
 from matplotlib import pyplot as plt
 
-def process_json(mapstats_json, snp_nwk, iqtree_json):
+def process_json(mapstats_json, iqtree_json, st_stats, al_data):
     report_json = {}
-
-    with open(snp_nwk, 'r') as fin:
-        tree = fin.read().strip("\n")
 
     with open(mapstats_json, 'r') as j:
         report_json["mapping"] = json.loads(j.read())
@@ -14,9 +12,23 @@ def process_json(mapstats_json, snp_nwk, iqtree_json):
     with open(iqtree_json, 'r') as j:
         report_json["sequence_phylo"] = json.loads(j.read())
 
-    report_json["snp_phylo"] = {}
-    report_json["snp_phylo"]["format"] = "newick"
-    report_json["snp_phylo"]["tree"] = tree
+    with open(st_stats, 'r') as fin:
+        report_json["st_stats"] = defaultdict(lambda: defaultdict(dict))
+        header = fin.readline()
+        for line in fin.readlines():
+            sline = line.strip("\n").split("\t")
+
+            ## collect low cov warnings
+            if sline[0] == "WARNINGS":
+                scheme = sline[1]
+                ids = sline[2:]
+                report_json["st_stats"]["warnings"][scheme] = ids
+
+            else:
+                scheme, id, doc, boc = line.strip("\n").split("\t")
+                report_json["st_stats"]["schemes"][scheme][id] = { "DOC" : doc, "BOC" : boc }
+
+    report_json["mapping"]["allele_report"] = al_data
 
     print(json.dumps(report_json, indent=4))
 
@@ -59,13 +71,17 @@ def makehtml(map_stats, phylo_tree, sampleID):
     with open("./report.html", "w") as htmlout:
         htmlout.write(html)
 
-def main(mapstats_json, snp_nwk, iqtree_json):
-    process_json(mapstats_json, snp_nwk, iqtree_json)
+def main(mapstats_json, iqtree_json, st_stats, al_stats_json):
+
+    prefix = os.path.basename(mapstats_json).split("_mapstats.json")[0]
+
+    with open(al_stats_json, 'r') as fin:
+        al_data = json.load(fin)[prefix]
+
+    process_json(mapstats_json, iqtree_json, f"{prefix}_ST_stats.csv", al_data)
     # make_plots(map_stats['coverage_breadth'], map_stats['gg_array'])
     #
     # makehtml(map_stats, phylo_tree, os.path.splitext(os.path.basename(json_file))[0])
 
 if __name__=="__main__":
-    # main(sys.argv[1])
-    # main("/home/amorris/BioInf/Parapipe/PRJNA634014_H/mapping_stats/SRR11818073_mapstats.json", "/home/amorris/BioInf/Parapipe/PRJNA634014_H/GVCFs/tree.nwk")
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
