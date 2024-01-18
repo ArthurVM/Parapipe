@@ -18,12 +18,13 @@ workflow preprocessing {
     take:
       input_files
       ref_bt2index
+      read_n_threshold
 
     main:
       // check fastq files for quality and read count
       checkFqValidity(input_files)
-      countReads(checkFqValidity.out.checkValidity_fqs)
-      fastp(countReads.out.countReads_fqs)
+      countReads(checkFqValidity.out.checkValidity_fqs, read_n_threshold)
+      fastp(countReads.out.countReads_fqs, read_n_threshold)
 
       // produce QC reports
       fastQC(fastp.out.fastp_fqs)

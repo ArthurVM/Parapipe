@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import json
 from collections import defaultdict
 from os import path
-from sys import argv
+from sys import argv, exit
 from scipy.cluster.hierarchy import dendrogram, linkage, to_tree
 from scipy.spatial.distance import pdist, squareform
 from sklearn.preprocessing import StandardScaler
@@ -126,6 +126,35 @@ def make_tree(Z, header_set, prefix, style="ggplot"):
 
     plt.savefig(f"./{prefix}.png")
 
+def make_empty_out():
+    outfiles = ["NO_SNP_TREE.png", "snp_tree.nwk"]
+
+    for f in outfiles:
+        with open(f, 'w') as fout:
+            print(f"None", file=fout)
+    
+    gen_empty_plot("Cannot be generated with <3 samples.", "allele_matrix.png")
+    gen_empty_plot("Cannot be generated with <3 samples.", "pca.png")
+    gen_empty_plot("Cannot be generated with <3 samples.", "snp_heatmap.png")
+
+def gen_empty_plot(text, out):
+        save_path = out
+        # Create an empty plot
+        fig, ax = plt.subplots()
+
+        # Add the text to the plot
+        ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=16, color='red')
+
+        # Remove axis labels and ticks
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+
+        # Save the plot as a PNG image
+        plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+        return save_path
+
 def main(args):
     prefix = path.basename(args[1].split(".csv")[0])
     matrix_data = pd.read_csv(args[1], index_col=0)
@@ -134,6 +163,11 @@ def main(args):
 
     ## Sample names
     sample_names = list(matrix_data.index)
+
+    if len(sample_names) < 3:
+        print(f"Fewer than 3 samples present in the allele matrix. Exiting...")
+        make_empty_out()
+        exit(0)
 
     ## Create a distance matrix based on the allele presence/absence matrix
     distance_matrix = np.zeros((len(sample_names), len(sample_names)))

@@ -13,9 +13,9 @@ from Bio import SeqIO
 NV = namedtuple("NV", ["chr", "start", "end", "id"])
 
 
-def make_multifasta(profile_id, concats):
+def make_multifasta(scheme_id, concats):
 
-    out_path = f"{profile_id}.concats.fasta"
+    out_path = f"{scheme_id}.concats.fasta"
     with open(out_path, 'w') as fout:
         for fa in concats:
             for rec in SeqIO.parse(fa, "fasta"):
@@ -42,42 +42,50 @@ def read_bed(bed):
     return locdict
 
 
-def aln_and_tree(var_concats):
+def aln_and_tree(scheme_id, concat_fasta):
     """ Requires clustalw and iqtree2 in PATH
     """
 
-    for profile_id, multifasta in var_concats.items():
-        # out_path = make_multifasta(profile_id, concats)
+    # for scheme_id, multifasta in var_concats.items():
+    # out_path = make_multifasta(scheme_id, concats)
 
-        aln_line = f"clustalw2 -INFILE={multifasta} -ALIGN -OUTPUT=nexus -TYPE=DNA -OUTFILE={profile_id}.nxs"
-        subprocess.call(aln_line, shell=True)
+    aln_line = f"clustalw2 -INFILE={concat_fasta} -ALIGN -OUTPUT=nexus -TYPE=DNA -OUTFILE={scheme_id}.nxs"
+    subprocess.call(aln_line, shell=True)
 
-        tree_line = f"iqtree2 -s {profile_id}.nxs -b 100"
-        subprocess.call(tree_line, shell=True)
+    tree_line = f"iqtree2 -s {scheme_id}.nxs -b 100"
+    subprocess.call(tree_line, shell=True)
 
 
 def make_JSON(var_profiles):
 
     json_dict = defaultdict(dict)
 
-    for profile_id, bed in var_profiles.items():
-        json_dict[profile_id]["bed"] = bed
+    for scheme_id, bed in var_profiles.items():
+        json_dict[scheme_id]["bed"] = bed
 
-        contree = profile_id + ".nxs.contree"
-        iqtree_log = profile_id + ".nxs.iqtree"
-        mldist = profile_id + ".nxs.mldist"
-        nxs = profile_id + ".nxs"
+        contree = scheme_id + ".nxs.contree"
+        iqtree_log = scheme_id + ".nxs.iqtree"
+        mldist = scheme_id + ".nxs.mldist"
+        nxs = scheme_id + ".nxs"
 
         with open(contree, 'r') as fin:
-            json_dict[profile_id]["contree"] = fin.read().strip("\n")
+            data = fin.read().strip("\n")
+            json_dict[scheme_id]["contree"] = data
 
         with open(mldist, 'r') as fin:
             mlbox = []
-            for line in fin.readlines():
-                sline = [l for l in line.strip("\n").split(" ") if l!='']
-                mlbox.append(sline)
+            lines = fin.readlines()
 
-            json_dict[profile_id]["mldist"] = mlbox
+            ## deal with failed scheme analyses
+            if lines[0].strip("\n") == "None":
+                json_dict[scheme_id]["mldist"] = "None"
+
+            else:
+                for line in lines:
+                    sline = [l for l in line.strip("\n").split(" ") if l!='']
+                    mlbox.append(sline)
+
+                json_dict[scheme_id]["mldist"] = mlbox
 
     with open("iqtree.json", 'w') as fout:
         json.dump(json_dict, fout, indent=4)
@@ -115,7 +123,15 @@ def get_locus_seq(ref, scheme, id, nv, bam_path, prefix, fout):
         return None
 
 
-def run_pipeline(args):
+def make_empty_out(scheme_id):
+    outfiles = [f"{scheme_id}.nxs.contree", f"{scheme_id}.nxs.iqtree", f"{scheme_id}.nxs.mldist", f"{scheme_id}.nxs", "snp_tree.nwk"]
+
+    for outfile in outfiles:
+        with open(outfile, 'w') as fout:
+            print(f"None", file=fout)
+    
+
+def run_pipeline_old(args):
     ref_fa = "/home/amorris/BioInf/MLVA_getter/cryptosporidium_parvum.fasta"
     ref_gff = "/home/amorris/BioInf/MLVA_getter/cryptosporidium_parvum.gff"
 
@@ -138,7 +154,6 @@ def run_pipeline(args):
 
     for bam_path in bams_list:
         bam_prefix = os.path.basename(bam_path).split("_grouped.bam")[0]
-        print(bam_path, bam_prefix)
 
         with open(f"{bam_prefix}_ST_stats.csv", 'w') as fout:
             print("scheme\tlocus\tDOC\tBOC", file=fout, flush=True)
@@ -152,32 +167,116 @@ def run_pipeline(args):
 
                     if consensus_fasta == None:
                         print(f"gene extraction for {scheme} : {id} : {bam_prefix} failed.\n", flush=True)
+                        loci_dict[scheme][bam_prefix][id] = None
                         continue
 
                     loci_dict[scheme][bam_prefix][id] = consensus_fasta
 
-    for scheme, sample_cc in loci_dict.items():
-        numlocs = len(scheme_loci_ids[scheme])
+    else:
+        for scheme, sample_cc in loci_dict.items():
+            numlocs = len(scheme_loci_ids[scheme])
 
-        concat_fasta = f"{scheme}_concats.fasta"
-        var_concats[scheme] = concat_fasta
+            concat_fasta = f"{scheme}_concats.fasta"
+            var_concats[scheme] = concat_fasta
 
-        with open(concat_fasta, "w") as fout:
-            for sample_id, loci in sample_cc.items():
-                n = len(loci)
+            seqs_in_concat_fasta = 0
+            with open(concat_fasta, "w") as fout:
+                for sample_id, loci in sample_cc.items():
+                    n = len(loci)
 
-                if n == numlocs:
-                    ## conserve sequence order
-                    concat_seq = ""
-                    for nv in scheme_loci_ids[scheme]:
-                        concat_seq += loci[nv]
+                    if n == numlocs:
+                        ## conserve sequence order
+                        concat_seq = ""
+                        for nv in scheme_loci_ids[scheme]:
 
-                    print(f">{sample_id}\n{concat_seq}\n", file=fout, flush=True)
-                else:
-                    print(f"{sample_id} only covered {n}/{numlocs} of the target loci in scheme {scheme} and will not be included in the alignment.", flush=True)
+                            ## deal with empty sequences
+                            if loci[nv] == None or len(loci[nv]) < 10:
+                                continue
 
-    # ## run align and build tree
-    aln_and_tree(var_concats)
+                            concat_seq += loci[nv]
+
+                        print(f">{sample_id}\n{concat_seq}\n", file=fout, flush=True)
+                        seqs_in_concat_fasta+=1
+                    else:
+                        print(f"{sample_id} only covered {n}/{numlocs} of the target loci in scheme {scheme} and will not be included in the alignment.", flush=True)
+            
+            ## check that there are at least 3 sequences to align
+            if seqs_in_concat_fasta >= 3:
+                ## run align and build tree
+                aln_and_tree(scheme, concat_fasta)
+            else:
+                ## exit scheme analysis and construct empty output files
+                print(f"Fewer than 3 ({seqs_in_concat_fasta}) sequences detected for scheme {scheme}. Cannot run alignment or tree bulding.")
+                make_empty_out(scheme)
+
+    make_JSON(var_profiles)
+
+
+def run_pipeline(args):
+    ref_fa = "/home/amorris/BioInf/MLVA_getter/cryptosporidium_parvum.fasta"
+    ref_gff = "/home/amorris/BioInf/MLVA_getter/cryptosporidium_parvum.gff"
+
+    var_profiles = read_yaml(args.yaml)
+    var_concats = defaultdict(list)
+    bams_list = args.bams
+
+    scheme_loci_ids = {scheme: read_bed(s_data["bed"]) for scheme, s_data in var_profiles.items()}
+
+    loci_dict = defaultdict(lambda: defaultdict(dict))
+
+    for bam_path in bams_list:
+        bam_prefix = os.path.basename(bam_path).split("_grouped.bam")[0]
+
+        with open(f"{bam_prefix}_ST_stats.csv", 'w') as fout:
+            print("scheme\tlocus\tDOC\tBOC", file=fout, flush=True)
+
+            for scheme, scheme_loci in scheme_loci_ids.items():
+                for id, nv in scheme_loci.items():
+                    consensus_fasta = get_locus_seq(f"./{id}.fa", scheme, id, nv, bam_path, bam_prefix, fout)
+
+                    if consensus_fasta is None:
+                        print(f"gene extraction for {scheme} : {id} : {bam_prefix} failed.\n", flush=True)
+                        continue
+
+                    loci_dict[scheme][bam_prefix][id] = consensus_fasta
+
+    ## check that there is enough sequence data to proceed
+    ## there may not be if all samples were low quality and therefore no loci for any schemes were covered
+    if len(loci_dict) == 0:
+        print(f"All schemes failed due to lack of coverage of constituent loci across the dataset.")
+        for scheme in scheme_loci_ids:
+            make_empty_out(scheme)
+    
+    else:
+        ## check if any schemes failed
+        for scheme in scheme_loci_ids:
+            if scheme not in loci_dict:
+                print(f"Scheme {scheme} failed due to lack of coverage of constituent loci across the dataset.")
+                make_empty_out(scheme)
+
+        ## proceed with successful schemes
+        for scheme, sample_cc in loci_dict.items():
+            numlocs = len(scheme_loci_ids[scheme])
+            concat_fasta = f"{scheme}_concats.fasta"
+            var_concats[scheme] = concat_fasta
+            seqs_in_concat_fasta = 0
+
+            with open(concat_fasta, "w") as fout:
+                for sample_id, loci in sample_cc.items():
+                    n = len(loci)
+
+                    if n == numlocs:
+                        concat_seq = "".join(loci[nv] for nv in scheme_loci_ids[scheme] if loci[nv] and len(loci[nv]) >= 10)
+                        print(f">{sample_id}\n{concat_seq}\n", file=fout, flush=True)
+                        seqs_in_concat_fasta += 1
+                    else:
+                        print(f"{sample_id} only covered {n}/{numlocs} of the target loci in scheme {scheme} and will not be included in the alignment.", flush=True)
+
+            if seqs_in_concat_fasta >= 3:
+                aln_and_tree(scheme, concat_fasta)
+            else:
+                print(f"Fewer than 3 ({seqs_in_concat_fasta}) sequences detected for scheme {scheme}. Cannot run alignment or tree building.")
+                make_empty_out(scheme)
 
     make_JSON(var_profiles)
 

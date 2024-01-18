@@ -57,6 +57,8 @@ else {
   params.database = "${workflow.launchDir}/${params.database}"
 }
 
+params.read_n_threshold == 1000000
+
 log.info """
 ========================================================================
 P A R A P I P E
@@ -102,7 +104,7 @@ workflow {
     /*******************************
     * PREPROCESSING WORKFLOW START *
     ********************************/
-    preprocessing(input_files, prepRef.out.ref_bt2index)
+    preprocessing(input_files, prepRef.out.ref_bt2index, params.read_n_threshold)
 
     /*******************************
     *      SNP WORKFLOW START      *

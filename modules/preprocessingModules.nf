@@ -51,6 +51,7 @@ process countReads {
 
     input:
     tuple val(sample_name), path(fq1), path(fq2), val(is_ok)
+    val(read_n_threshold)
 
     when:
     is_ok == 'OK'
@@ -65,7 +66,7 @@ process countReads {
     """
     num_reads=\$(fqtools count $fq1 $fq2)
 
-    if (( \$num_reads > 500000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= 500k pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= $read_n_threshold pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
     stub:
@@ -91,6 +92,7 @@ process fastp {
 
     input:
     tuple val(sample_name), path(fq1), path(fq2), val(run_fastp)
+    val(read_n_threshold)
 
     when:
     run_fastp =~ /${sample_name}/
@@ -114,7 +116,7 @@ process fastp {
 
     num_reads=\$(fqtools count ${clean_fq1} ${clean_fq2})
 
-    if (( \$num_reads > 500000 )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= 500k pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= $read_n_threshold pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
     stub:

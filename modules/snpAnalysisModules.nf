@@ -87,17 +87,8 @@ process phylo {
   done
 
   python3 ${scripts}/get_MLVA_consensus.py ${vars_yaml} --bams ./*bam
-
-  a=`ls -la *vcf.gz | wc -l`
-  if [ \$a -gt 2 ]
-    then
-      python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons}
-      python3 ${scripts}/make_WG_tree.py allele_matrix.csv
-    else
-      touch NO_SNP_TREE.png
-  fi
-
-  touch snp_tree.nwk
+  python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons}
+  python3 ${scripts}/make_WG_tree.py allele_matrix.csv
   """
 
   stub:
