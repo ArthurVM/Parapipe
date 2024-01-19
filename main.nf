@@ -46,9 +46,6 @@ if ( params.pattern == null ) {
 if ( params.yaml == null ) {
     exit 1, "error: please provide a --yaml argument. Use --help for an explenation for the parameters."
 }
-else {
-  yaml = "${workflow.launchDir}/${params.yaml}"
-}
 
 if ( params.database == null ) {
   params.database = "false"
@@ -109,7 +106,7 @@ workflow {
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    snp_analysis(input_files, captureEnv.out.env_json, db, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, yaml)
+    snp_analysis(input_files, captureEnv.out.env_json, db, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, params.yaml)
 
 }
 
