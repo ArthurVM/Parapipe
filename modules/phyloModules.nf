@@ -7,7 +7,7 @@ process getMOI {
 
   tag { sample_name }
 
-  publishDir "${params.output_dir}/${sample_name}/VariantAnalysis/SNP", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
+  publishDir "${params.output_dir}/${sample_name}/VCF", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
   publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.json'
   publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.png'
 
@@ -46,37 +46,62 @@ process getMOI {
   """
 }
 
-process phylo {
+process molTyping_phylo {
   /**
-  * Run Phylogenetic analysis for sequence and SNP typing schemes
+  * Run Phylogenetic analysis for molecular typing schemes
   */
 
-  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.json'
+  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: 'typing_report.json'
   publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.nxs'
-  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.png'
-  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.csv'
-  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.nwk'
-  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.snps.bed'
 
   memory '15 GB'
   cpus 8
 
   input:
   path(bam)
+  path(vars_yaml)
+
+  output:
+  path("typing_report.json"), emit: typingreport_json
+  path("*.nxs"), emit: nxs_aln
+
+  script:
+  scripts = "${baseDir}/bin"
+  """
+  python3 ${scripts}/get_MLVA_consensus.py ${vars_yaml} --bams ./*bam
+  """
+
+  stub:
+  """
+  touch iqtree.json
+  touch stub.nxs
+  touch allele_stats.json
+  """
+}
+
+process wgSNV_phylo {
+  /**
+  * Run Phylogenetic analysis for SNP typing scheme
+  */
+
+  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.json'
+  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.png'
+  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.snps.bed'
+  publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: 'allele_matrix.csv'
+
+  memory '15 GB'
+  cpus 8
+
+  input:
   path(mapstats_jsons)
   path(vcf)
   tuple path(fasta), path(gff)
   val(database)
-  path(vars_yaml)
 
   output:
-  path("snp_tree.nwk"), emit: snp_nwk
-  path("*_ST_stats.csv"), emit: st_stats
   path("*.snps.bed"), emit: snps_bed
   path("allele_matrix.csv"), emit: allele_matrix
   path("*.png"), emit: snp_png
-  path("iqtree.json"), emit: iqtree_json
-  path("*.nxs"), emit: nxs_aln
   path("allele_stats.json"), emit: al_stats_json
 
   script:
@@ -86,20 +111,15 @@ process phylo {
       tabix -f -p vcf \$v
   done
 
-  python3 ${scripts}/get_MLVA_consensus.py ${vars_yaml} --bams ./*bam
   python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons}
   python3 ${scripts}/make_WG_tree.py allele_matrix.csv
   """
 
   stub:
   """
-  touch snp_tree.nwk
-  touch stub_ST_stats.csv
   touch stub.snps.bed
   touch allele_matrix.csv
   touch stub.png
-  touch iqtree.json
-  touch stub.nxs
   touch allele_stats.json
   """
 }
@@ -117,9 +137,7 @@ process makeJSON {
 
   input:
   tuple val(sample_name), path(bam), path(mapstats_json), path(moi_json), path(moi_png), path(vcf)
-  path(snp_nwk)
-  path(iqtree_json)
-  path(st_stats)
+  path(typingreport_json)
   path(al_stats_json)
 
   output:
@@ -129,7 +147,7 @@ process makeJSON {
   scripts = "${baseDir}/bin"
   st_stats_csv = "${sample_name}_ST_stats.csv"
   """
-  python3 ${scripts}/make_report_json.py ${mapstats_json} ${iqtree_json} ${st_stats_csv} ${al_stats_json} > ${sample_name}_report.json
+  python3 ${scripts}/make_report_json.py ${sample_name} ${mapstats_json} ${typingreport_json} ${al_stats_json} > ${sample_name}_report.json
   """
 
   stub:

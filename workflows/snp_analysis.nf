@@ -2,14 +2,15 @@
 nextflow.enable.dsl = 2
 
 // import modules
-include {getMOI} from '../modules/snpAnalysisModules.nf'
-include {phylo} from '../modules/snpAnalysisModules.nf'
-include {makeJSON} from '../modules/snpAnalysisModules.nf'
-include {makeSampleReports} from '../modules/snpAnalysisModules.nf'
-include {makeRunReport} from '../modules/snpAnalysisModules.nf'
+include {getMOI} from '../modules/phyloModules.nf'
+include {molTyping_phylo} from '../modules/phyloModules.nf'
+include {wgSNV_phylo} from '../modules/phyloModules.nf'
+include {makeJSON} from '../modules/phyloModules.nf'
+include {makeSampleReports} from '../modules/phyloModules.nf'
+include {makeRunReport} from '../modules/phyloModules.nf'
 
 // define SNP workflow
-workflow snp_analysis {
+workflow phylo {
 
     take:
       input_files
@@ -27,17 +28,29 @@ workflow snp_analysis {
       // Extract just bam files from tuple for collection
       formatPhyloInput(getMOI.out.bam_pp_moi)
 
-      // Carry out SNP and ST phylogenetic analysis
-      phylo(formatPhyloInput.out.bam.collect(), formatPhyloInput.out.mapstats_json.collect(), formatPhyloInput.out.vcf.collect(), refdata, database, yaml)
+      // Carry out SNP typing analysis
+      wgSNV_phylo(formatPhyloInput.out.mapstats_json.collect(), formatPhyloInput.out.vcf.collect(), refdata, database)
+
+      // if a yaml is provided then run in silico molecular typing
+      if ( yaml != "false" ) {
+        // Carry out molecular typing analysis
+        molTyping_phylo(formatPhyloInput.out.bam.collect(), yaml)
+        typingreport_json = molTyping_phylo.out.typingreport_json
+      }
+
+      // else capture that for the report JSON
+      else {
+        typingreport_json = "/None/"
+      }
 
       // Make report JSON
-      makeJSON(getMOI.out.bam_pp_moi, phylo.out.snp_nwk, phylo.out.iqtree_json, phylo.out.st_stats, phylo.out.al_stats_json)
+      makeJSON(getMOI.out.bam_pp_moi, typingreport_json, wgSNV_phylo.out.al_stats_json)
 
       // Make report PDF for each sample
-      makeSampleReports(getMOI.out.bam_pp_moi, env_json, makeJSON.out.report_json, phylo.out.snp_png)
+      makeSampleReports(getMOI.out.bam_pp_moi, env_json, makeJSON.out.report_json, wgSNV_phylo.out.snp_png)
 
       // Make report PDF for this run
-      makeRunReport(env_json, makeJSON.out.report_json.collect(), phylo.out.snp_png, formatPhyloInput.out.moi_json.collect(), formatPhyloInput.out.moi_png.collect())
+      makeRunReport(env_json, makeJSON.out.report_json.collect(), wgSNV_phylo.out.snp_png, formatPhyloInput.out.moi_json.collect(), formatPhyloInput.out.moi_png.collect())
 
 }
 

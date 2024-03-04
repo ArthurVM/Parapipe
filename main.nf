@@ -8,7 +8,7 @@ include {printHelp} from './modules/help.nf'
 include {captureEnv} from './modules/captureEnv.nf'
 include {prepRef} from './workflows/prepref.nf'
 include {preprocessing} from './workflows/preprocessing.nf'
-include {snp_analysis} from './workflows/snp_analysis.nf'
+include {phylo} from './workflows/snp_analysis.nf'
 
 /*
  ANSI escape codes to allow colour-coded output messages
@@ -43,37 +43,39 @@ if ( params.pattern == null ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
 
+// initialise default parameters
 if ( params.yaml == null ) {
-    exit 1, "error: please provide a --yaml argument. Use --help for an explenation for the parameters."
-}
-
-if ( params.database == null ) {
-  params.database = "false"
+    yaml = "false"
 }
 else {
-  params.database = "${workflow.launchDir}/${params.database}"
+    yaml = params.yaml
 }
 
-params.read_n_threshold == 1000000
+if ( params.read_n_threshold == null ) {
+    read_n_threshold = 1000000
+}
+else {
+    read_n_threshold = params.read_n_threshold
+}
 
 log.info """
-========================================================================
+===================================================================================================
 P A R A P I P E
 
 Parameters used:
-------------------------------------------------------------------------
---input_dir  ${params.input_dir}
---output_dir ${params.output_dir}
---ref		     ${params.ref}
---pattern		 ${params.pattern}
---yaml       ${params.yaml}
---database   ${params.database}
+---------------------------------------------------------------------------------------------------
+--input_dir             ${params.input_dir}
+--output_dir            ${params.output_dir}
+--ref               ${params.ref}
+--pattern       ${params.pattern}
+--read_n_threshold      ${read_n_threshold}
+--yaml                  ${yaml}
 
 Runtime data:
-------------------------------------------------------------------------
-Profile     ${workflow.profile}
-User        ${workflow.userName}
-Launch dir  ${workflow.launchDir}
+---------------------------------------------------------------------------------------------------
+Profile                 ${workflow.profile}
+User                    ${workflow.userName}
+Launch dir              ${workflow.launchDir}
 """
 .stripIndent()
 
@@ -83,7 +85,7 @@ workflow {
   pattern = params.pattern
 	reads = params.input_dir + pattern
 	numfiles = file(reads) // count the number of files
-  db = params.database
+  db = "false"
 
   Channel.fromFilePairs(reads, flat: true, checkIfExists: true, size: -1)
    .ifEmpty { error "cannot find any files matching ${pattern} in ${params.input_dir}" }
@@ -91,7 +93,7 @@ workflow {
 
   main:
 
-    captureEnv(params.input_dir, params.output_dir, params.ref, params.yaml, db)
+    captureEnv(params.input_dir, params.output_dir, params.ref, yaml, db)
 
     /*******************************
     *    PREPREF WORKFLOW START    *
@@ -101,13 +103,12 @@ workflow {
     /*******************************
     * PREPROCESSING WORKFLOW START *
     ********************************/
-    preprocessing(input_files, prepRef.out.ref_bt2index, params.read_n_threshold)
+    preprocessing(input_files, prepRef.out.ref_bt2index, read_n_threshold)
 
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    snp_analysis(input_files, captureEnv.out.env_json, db, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, params.yaml)
-
+    phylo(input_files, captureEnv.out.env_json, db, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, yaml)
 }
 
 workflow.onComplete {

@@ -3,36 +3,39 @@ import os, sys
 from collections import defaultdict
 from matplotlib import pyplot as plt
 
-def process_json(mapstats_json, iqtree_json, st_stats, al_data):
-    report_json = {}
 
-    with open(mapstats_json, 'r') as j:
-        report_json["mapping"] = json.loads(j.read())
+def readJSON(json_file):
+    with open(json_file, 'r') as j:
+        return json.loads(j.read())
 
-    with open(iqtree_json, 'r') as j:
-        report_json["sequence_phylo"] = json.loads(j.read())
 
-    with open(st_stats, 'r') as fin:
-        report_json["st_stats"] = defaultdict(lambda: defaultdict(dict))
-        header = fin.readline()
-        for line in fin.readlines():
-            sline = line.strip("\n").split("\t")
+def process_json(sample_id, mapstats_json, typing_json, al_data):
 
-            ## collect low cov warnings
-            if sline[0] == "WARNINGS":
-                scheme = sline[1]
-                ids = sline[2:]
-                report_json["st_stats"]["warnings"][scheme] = ids
+    report_json = defaultdict(lambda: defaultdict(dict))
 
-            else:
-                scheme, id, doc, boc = line.strip("\n").split("\t")
-                report_json["st_stats"]["schemes"][scheme][id] = { "DOC" : doc, "BOC" : boc }
+    report_json["mapping"] = readJSON(mapstats_json)
+
+    ## check the Molecular typing scheme was run
+    if typing_json == "None":
+        ## else initialise empty fields
+        report_json["typing"] = None
+    
+    else:
+        typing_data = readJSON(typing_json)
+
+        for scheme, subdict in typing_data.items():
+            tmp = subdict["locus_coverage"][sample_id]
+            report_json["typing"][scheme]["locus_coverage"] = tmp
+
+            report_json["typing"][scheme]["phylo"] = {}
+            report_json["typing"][scheme]["phylo"]["contree"] = subdict["contree"]
+            report_json["typing"][scheme]["phylo"]["mldist"] = subdict["mldist"]
 
     report_json["mapping"]["allele_report"] = al_data
-
-    print(json.dumps(report_json, indent=4))
-
+    json.dump(report_json, indent=4, fp=sys.stdout)
+    
     return report_json
+
 
 def make_plots(cov_array, gg_array):
     plt.style.use('ggplot')
@@ -50,6 +53,7 @@ def make_plots(cov_array, gg_array):
     plt.tight_layout()
 
     plt.savefig("./covplot.jpeg")
+
 
 def makehtml(map_stats, phylo_tree, sampleID):
     html = f"""
@@ -71,17 +75,19 @@ def makehtml(map_stats, phylo_tree, sampleID):
     with open("./report.html", "w") as htmlout:
         htmlout.write(html)
 
-def main(mapstats_json, iqtree_json, st_stats, al_stats_json):
+
+def main(sample_id, mapstats_json, typing_json, al_stats_json):
 
     prefix = os.path.basename(mapstats_json).split("_mapstats.json")[0]
 
     with open(al_stats_json, 'r') as fin:
         al_data = json.load(fin)[prefix]
 
-    process_json(mapstats_json, iqtree_json, f"{prefix}_ST_stats.csv", al_data)
+    process_json(sample_id, mapstats_json, typing_json, al_data)
     # make_plots(map_stats['coverage_breadth'], map_stats['gg_array'])
     #
     # makehtml(map_stats, phylo_tree, os.path.splitext(os.path.basename(json_file))[0])
+
 
 if __name__=="__main__":
     main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

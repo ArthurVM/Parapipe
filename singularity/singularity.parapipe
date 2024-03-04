@@ -19,8 +19,8 @@ pymoi_version=0.2a
 iqtree2_version=2.2.2.6
 clustalw2_version=2.1
 
-PACKAGES="procps curl git build-essential wget zlib1g-dev libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev libtbb-dev libssl-dev libsqlite3-dev pkg-config jq rsync autoconf perl libjson-perl libfindbin-libs-perl cpanminus cmake tabix libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-17-jdk openjdk-17-jre"
-PYTHON="python2.7 python-dev python3-dev python-setuptools python3-pip"
+PACKAGES="procps curl git build-essential wget zlib1g-dev ffmpeg libsm6 libxext6 libncurses-dev libbz2-dev liblzma-dev libcurl4-openssl-dev libtbb-dev libssl-dev libsqlite3-dev pkg-config jq rsync autoconf perl libjson-perl libfindbin-libs-perl cpanminus cmake tabix libvcflib-tools libssl-dev libsqlite3-dev software-properties-common openjdk-17-jdk openjdk-17-jre"
+PYTHON="python-dev python3-dev python-setuptools python3-pip"
 
 apt-get update \
 && apt-get install -y $PACKAGES $PYTHON \
@@ -30,7 +30,7 @@ apt-get update \
 && make altinstall \
 && cd .. \
 && ln -s /usr/local/bin/python${python_version} /usr/local/bin/python3 \
-&& pip3 install --upgrade pip
+&& pip install --upgrade pip
 
 cd / \
 && wget https://github.com/samtools/samtools/releases/download/${samtools_version}/samtools-${samtools_version}.tar.bz2 \
@@ -53,12 +53,12 @@ curl -fsSL https://github.com/iqtree/iqtree2/releases/download/v${iqtree2_versio
 curl -fsSL https://github.com/ArthurVM/PyMOI/archive/refs/tags/${pymoi_version}.tar.gz | tar -xz \
 && pip install ./PyMOI-${pymoi_version}/
 
-pip3 install ujson==${ujson_version}
-pip3 install fpdf
-pip3 install biopython
-pip3 install matplotlib
-pip3 install pysam
-pip3 install PyYAML
+pip install ujson==${ujson_version}
+pip install fpdf
+pip install biopython
+pip install matplotlib
+pip install pysam
+pip install PyYAML
 
 %environment
 export htslib_version=1.12
