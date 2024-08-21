@@ -33,10 +33,10 @@ workflow preprocessing {
 
       // trim reads
       // temporarily removed
-      // trimGalore(fastp.out.fastp_fqs)
+      trimGalore(fastp.out.fastp_fqs)
 
       // map reads to reference sequence to produce BAM
-      map2Ref(fastp.out.fastp_fqs, ref_bt2index)
+      map2Ref(trimGalore.out.tg_fqs, ref_bt2index)
 
       // run deduplication and read grouping on BAM
       picard(map2Ref.out.bam)
@@ -46,4 +46,5 @@ workflow preprocessing {
 
     emit:
       bam_pre = summarise.out.bam_pre_out
+      multiQC_report = multiQC.out.multiQC_report
 }

@@ -53,12 +53,15 @@ curl -fsSL https://github.com/iqtree/iqtree2/releases/download/v${iqtree2_versio
 curl -fsSL https://github.com/ArthurVM/PyMOI/archive/refs/tags/${pymoi_version}.tar.gz | tar -xz \
 && pip install ./PyMOI-${pymoi_version}/
 
+pip install numpy==1.22.4
 pip install ujson==${ujson_version}
-pip install fpdf
-pip install biopython
-pip install matplotlib
-pip install pysam
-pip install PyYAML
+pip install fpdf==1.7.2
+pip install biopython==1.79
+pip install matplotlib==3.7.5
+pip install pysam==0.18.0
+pip install PyYAML==5.4.1
+pip install plotly==5.18.0
+pip install ipywidgets==8.1.
 
 %environment
 export htslib_version=1.12

@@ -22,8 +22,8 @@ def make_empty_out():
         with open(f, 'w') as fout:
             print(f"None", file=fout)
     
-    gen_empty_plot("Cannot be generated with <3 samples.", "allele_matrix.png")
-    gen_empty_plot("Cannot be generated with <3 samples.", "pca.png")
+    gen_empty_plot("Cannot be generated with <3 samples.", "allele_matrix_tree.png")
+    gen_empty_plot("Cannot be generated with <3 samples.", "allele_matrix_pca.png")
     gen_empty_plot("Cannot be generated with <3 samples.", "snp_heatmap.png")
 
 
@@ -185,15 +185,18 @@ def main(args):
     allele_csv = pd.read_csv(args[1], index_col=0)
 
     ## make ardal object
-    ard_mat = Ardal(allele_csv)
-    wg_D = ard_mat.pairwise(metric="absolute", chunk_size=100)
-    wg_nwk = dist2newick(wg_D)
+    ard_mat = Ardal("./allele_matrix.csv")
+    wg_D = ard_mat.pairwise(metric="absolute", chunk_size=50)
+    wg_D.to_csv(f"absolute_distance.csv")
+
+    print("pairwise finished")
 
     ## make plots
     ## check there are enough samples to plot
     if len(wg_D.index) < 3:
         make_empty_out()
     else:
+        wg_nwk = dist2newick(wg_D)
         basicTree(wg_nwk, prefix)
         pca(wg_D, prefix)
         makeHeatmap(wg_D)

@@ -33,7 +33,7 @@ def get_versions(singpath):
 def main(argv):
     env = {}
     
-    input_dir, output_dir, ref, yaml, db, singpath = argv
+    input_dir, output_dir, ref, yaml, db, singpath, read_n_threshold = argv
 
     current_datetime = datetime.datetime.now()
     formatted_date = current_datetime.strftime("%Y-%m-%d")
@@ -49,6 +49,7 @@ def main(argv):
     params["ref"] = ref
     params["yaml"] = yaml
     params["db"] = db
+    params["read_n_threshold"] = read_n_threshold
 
     versions = get_versions(singpath)
 

@@ -7,7 +7,7 @@ import glob
 import sys
 
 
-def go(singpath, configpath):
+def run(singpath, configpath):
 
     software = []
     database = []
@@ -75,4 +75,4 @@ def go(singpath, configpath):
 
 
 if __name__ == "__main__":
-    go(sys.argv[1], sys.argv[2])
+    run(sys.argv[1], sys.argv[2])

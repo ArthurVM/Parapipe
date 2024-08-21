@@ -13,6 +13,7 @@ process captureEnv {
   val(ref)
   val(yaml)
   val(db)
+  val(read_n_threshold)
 
   output:
   path("env.json"), emit: env_json
@@ -20,6 +21,6 @@ process captureEnv {
   script:
   scripts = "${baseDir}/bin"
   """
-  python3 ${scripts}/get_environment.py ${input_dir} ${output_dir} ${ref} ${yaml} ${db} ${baseDir}/singularity/
+  python3 ${scripts}/get_environment.py ${input_dir} ${output_dir} ${ref} ${yaml} ${db} ${baseDir}/singularity/ ${read_n_threshold}
   """
 }

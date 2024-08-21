@@ -96,11 +96,12 @@ process wgSNV_phylo {
   path(mapstats_jsons)
   path(vcf)
   tuple path(fasta), path(gff)
-  val(database)
+  path(database)
 
   output:
   path("*.snps.bed"), emit: snps_bed
   path("allele_matrix.csv"), emit: allele_matrix
+  path("absolute_distance.csv"), emit: dist_matrix
   path("*.png"), emit: snp_png
   path("allele_stats.json"), emit: al_stats_json
 
@@ -111,7 +112,7 @@ process wgSNV_phylo {
       tabix -f -p vcf \$v
   done
 
-  python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons}
+  python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons} --database ${database}
   python3 ${scripts}/make_WG_tree.py allele_matrix.csv
   """
 
@@ -203,14 +204,18 @@ process makeRunReport {
   path(snp_png)
   path(moi_json)
   path(moi_png)
+  path(multiqc_report)
+  path(dist_matrix)
 
   output:
   path("Parapipe_report.pdf"), emit: run_report_pdf
+  path("Parapipe_report.html"), emit: run_report_html
 
   script:
   scripts = "${baseDir}/bin"
   """
   python3 ${scripts}/make_run_report_pdf.py --env ${env_json} --report ${snpreport_jsons} --moi_json ${moi_json}
+  python3 ${scripts}/html_report.py --env ${env_json} --moi_json ${moi_json} --report ${snpreport_jsons} --dist_matrix ${dist_matrix} --multiqc ${baseDir}/${params.output_dir}/multiqc_report.html
   """
 
   stub:

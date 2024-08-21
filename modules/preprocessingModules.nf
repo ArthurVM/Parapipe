@@ -253,7 +253,7 @@ process map2Ref {
   publishDir "${params.output_dir}/${sample_name}/preprocessing/Map", mode: 'copy', pattern: '*_alnStats.txt'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
+  tuple val(sample_name), path(fq1), path(fq2)
   path(ref_bt2index)
 
   output:

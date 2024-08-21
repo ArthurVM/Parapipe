@@ -19,7 +19,9 @@ workflow phylo {
       bam_pre
       refdata
       ref_id
+      multiQC_report
       yaml
+    
 
     main:
       // Investigate sample heterozygosity
@@ -50,7 +52,7 @@ workflow phylo {
       makeSampleReports(getMOI.out.bam_pp_moi, env_json, makeJSON.out.report_json, wgSNV_phylo.out.snp_png)
 
       // Make report PDF for this run
-      makeRunReport(env_json, makeJSON.out.report_json.collect(), wgSNV_phylo.out.snp_png, formatPhyloInput.out.moi_json.collect(), formatPhyloInput.out.moi_png.collect())
+      makeRunReport(env_json, makeJSON.out.report_json.collect(), wgSNV_phylo.out.snp_png, formatPhyloInput.out.moi_json.collect(), formatPhyloInput.out.moi_png.collect(), multiQC_report, wgSNV_phylo.out.dist_matrix)
 
 }
 
