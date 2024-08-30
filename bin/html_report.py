@@ -27,7 +27,7 @@ def write_html(reports, map_tab, gg_fig, qc_report, env, dist_matrix, run_sample
     report_dt = get_dt()
 
     ## get phylo plot embeddings
-    phylo_plots_wrapper = make_WG_plots(dist_df, dist_prefix, run_samples)
+    phylo_plots_wrapper = make_WG_plots(dist_df, dist_prefix, dist_df.index)
 
     ## include parameters
     params_line = ""

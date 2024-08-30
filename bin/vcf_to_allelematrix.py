@@ -64,6 +64,21 @@ def mergeAMs(allele_matrix, database_matrix):
 def read_json(jfile):
     with open(jfile, 'r') as fin:
         return json.load(fin)
+    
+
+def countSNPs(ard_mat, sample_ids):
+
+    counts_dict = defaultdict(dict)
+    allale_mapping = ard_mat.toDict()
+
+    for id in sample_ids:
+        unique_alleles = ard_mat.unique([id])
+        total_alleles = allale_mapping[id]
+        counts_dict[id]["total_snps"] = len(total_alleles)
+        counts_dict[id]["unique_snps"] = list(unique_alleles)
+
+    with open("allele_stats.json", 'w') as fout:
+        json.dump(counts_dict, fout, indent=4)
 
 
 def run(args):
@@ -74,6 +89,8 @@ def run(args):
 
     samples = [os.path.basename(vcf).split(suffix)[0] for vcf in args.vcfs]
 
+    samples_to_include = [] ## IDs of samples which exceed required coverage
+
     for vcf_path in args.vcfs:
         sample_id = os.path.basename(vcf_path).split(suffix)[0]
 
@@ -83,11 +100,9 @@ def run(args):
         mapstats_json = f"{sample_id}_mapstats.json"
         jdata = read_json(mapstats_json)
 
-        ## check at least 90% of the genome is covered to at least 5x
-        ## if not, exclude this sample from SNP phylo tree construction
-        if jdata["mapping_stats"]["coverage_breadth_hist"]["5"] < 90.0:
-            print(f"ignored {vcf_path}")
-            continue
+        ## check coverage is sufficient
+        if jdata["mapping_stats"]["coverage_breadth_hist"]["5"] >= args.mincov*100:
+            samples_to_include.append(sample_id)
 
         vcf = pysam.VariantFile(vcf_path)
 
@@ -113,7 +128,15 @@ def run(args):
         print(database_matrix)
         allele_matrix = mergeAMs(allele_matrix, database_matrix)
     
-    allele_matrix.to_csv(f"allele_matrix.csv")
+    allele_matrix.to_csv(f"full_allele_matrix.csv")
+
+    ## find unique and total SNPs for all samples
+    ard_mat = Ardal("./full_allele_matrix.csv")
+    countSNPs(ard_mat, ard_mat.matrix.index)
+
+    ## subset the allele matrix for only samples which exceed coverage thresholds and output
+    subset_ard_mat = ard_mat.subsetbyGUID(samples_to_include)
+    subset_ard_mat.matrix.to_csv("allele_matrix.csv")
 
 
 def parse_args(argv):
@@ -125,6 +148,7 @@ def parse_args(argv):
     parser.add_argument('--qual', action='store', default=30, help='Quality score threshold for introducing a variant into a sequence.')
     parser.add_argument('--mapstats', action='store', nargs="*", help='Mapstats JSONs for quality control.')
     parser.add_argument('--database', action='store', help='Allele matrix database to merge with.')
+    parser.add_argument('--mincov', action='store', default=0.8, help='The minimum fraction of the genome which must be covered to a depth of 5x to include a sample in phylogenetic analysis. Default=0.8.')
 
     args = parser.parse_args(argv)
 

@@ -165,24 +165,8 @@ def makeHeatmap(distance_matrix):
     plt.savefig("./snp_heatmap.png")
 
 
-def countSNPs(ard_mat, sample_ids):
-
-    counts_dict = defaultdict(dict)
-    allale_mapping = ard_mat.toDict()
-
-    for id in sample_ids:
-        unique_alleles = ard_mat.unique([id])
-        total_alleles = allale_mapping[id]
-        counts_dict[id]["total_snps"] = len(total_alleles)
-        counts_dict[id]["unique_snps"] = list(unique_alleles)
-
-    with open("allele_stats.json", 'w') as fout:
-        json.dump(counts_dict, fout, indent=4)
-
-
 def main(args):
     prefix = path.basename(args[1].split(".csv")[0])
-    allele_csv = pd.read_csv(args[1], index_col=0)
 
     ## make ardal object
     ard_mat = Ardal("./allele_matrix.csv")
@@ -200,9 +184,6 @@ def main(args):
         basicTree(wg_nwk, prefix)
         pca(wg_D, prefix)
         makeHeatmap(wg_D)
-
-    ## produce snp report JSON
-    countSNPs(ard_mat, wg_D.index)
 
 
 main(sys.argv)

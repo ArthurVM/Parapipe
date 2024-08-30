@@ -15,6 +15,7 @@ log.info"""
 
   Optional Arguments:
     --database          the path to a directory containing vcf files for constructing a phylogenetic tree.
+    --mincov            the minimum fraction of the genome which must be covered to a depth of 5x to include a sample in phylogenetic analysis. Default=0.8.
 
   Profiles:
   singularity           run with singularity image

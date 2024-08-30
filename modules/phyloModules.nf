@@ -97,6 +97,7 @@ process wgSNV_phylo {
   path(vcf)
   tuple path(fasta), path(gff)
   path(database)
+  val(mincov)
 
   output:
   path("*.snps.bed"), emit: snps_bed
@@ -113,7 +114,7 @@ process wgSNV_phylo {
   done
 
   python3 ${scripts}/vcf_to_allelematrix.py --vcfs *vcf.gz --mapstats ${mapstats_jsons} --database ${database}
-  python3 ${scripts}/make_WG_tree.py allele_matrix.csv
+  python3 ${scripts}/make_WG_tree.py allele_matrix.csv ${mincov}
   """
 
   stub:

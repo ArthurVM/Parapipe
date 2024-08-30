@@ -65,6 +65,13 @@ else {
     database = params.database
 }
 
+if ( params.mincov == null ) {
+    mincov = 0.8
+}
+else {
+    mincov = params.mincov
+}
+
 log.info """
 ===================================================================================================
 P A R A P I P E
@@ -78,6 +85,7 @@ Parameters used:
 --read_n_threshold      ${read_n_threshold}
 --yaml                  ${yaml}
 --database              ${database}
+--mincov                ${mincov}
 
 Runtime data:
 ---------------------------------------------------------------------------------------------------
@@ -115,7 +123,7 @@ workflow {
     /*******************************
     *      SNP WORKFLOW START      *
     ********************************/
-    phylo(input_files, captureEnv.out.env_json, database, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, preprocessing.out.multiQC_report, yaml)
+    phylo(input_files, captureEnv.out.env_json, database, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, preprocessing.out.multiQC_report, yaml, mincov)
 }
 
 workflow.onComplete {

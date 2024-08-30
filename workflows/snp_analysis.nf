@@ -21,6 +21,7 @@ workflow phylo {
       ref_id
       multiQC_report
       yaml
+      mincov
     
 
     main:
@@ -31,7 +32,7 @@ workflow phylo {
       formatPhyloInput(getMOI.out.bam_pp_moi)
 
       // Carry out SNP typing analysis
-      wgSNV_phylo(formatPhyloInput.out.mapstats_json.collect(), formatPhyloInput.out.vcf.collect(), refdata, database)
+      wgSNV_phylo(formatPhyloInput.out.mapstats_json.collect(), formatPhyloInput.out.vcf.collect(), refdata, database, mincov)
 
       // if a yaml is provided then run in silico molecular typing
       if ( yaml != "false" ) {
