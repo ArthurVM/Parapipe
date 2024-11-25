@@ -101,7 +101,7 @@ def run(args):
         jdata = read_json(mapstats_json)
 
         ## check coverage is sufficient
-        if jdata["mapping_stats"]["coverage_breadth_hist"]["5"] >= args.mincov*100:
+        if float(jdata["mapping_stats"]["coverage_breadth_hist"]["5"]) >= args.mincov*100:
             samples_to_include.append(sample_id)
 
         vcf = pysam.VariantFile(vcf_path)
@@ -123,10 +123,14 @@ def run(args):
 
     allele_matrix = pd.DataFrame.from_dict(allele_dict)
 
+    ## handles default Parapipe behaviour
     if args.database != "false":
-        database_matrix = pd.read_csv(args.database, index_col=0) 
-        print(database_matrix)
-        allele_matrix = mergeAMs(allele_matrix, database_matrix)
+        try:
+            database_matrix = pd.read_csv(args.database, index_col=0) 
+            # print(database_matrix)
+            allele_matrix = mergeAMs(allele_matrix, database_matrix)
+        except:
+            print(f"Failed to merge database {args.database}...")
     
     allele_matrix.to_csv(f"full_allele_matrix.csv")
 
@@ -147,8 +151,8 @@ def parse_args(argv):
     parser.add_argument('--vcfs', required=True, action='store', nargs="*", help='VCF files to contruct a merged allele matrix from')
     parser.add_argument('--qual', action='store', default=30, help='Quality score threshold for introducing a variant into a sequence.')
     parser.add_argument('--mapstats', action='store', nargs="*", help='Mapstats JSONs for quality control.')
-    parser.add_argument('--database', action='store', help='Allele matrix database to merge with.')
-    parser.add_argument('--mincov', action='store', default=0.8, help='The minimum fraction of the genome which must be covered to a depth of 5x to include a sample in phylogenetic analysis. Default=0.8.')
+    parser.add_argument('--database', action='store', default=False, help='Allele matrix database to merge with.')
+    parser.add_argument('--mincov', action='store', type=float, default=0.8, help='The minimum fraction of the genome which must be covered to a depth of 5x to include a sample in phylogenetic analysis. Default=0.8.')
 
     args = parser.parse_args(argv)
 

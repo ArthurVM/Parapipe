@@ -269,12 +269,14 @@ def main(argv):
         run_samples.append(prefix)
 
     for rep in args.moi_json:
-        prefix = os.path.basename(rep).split(".heterozygosity.json")[0]
+        prefix = os.path.basename(rep).split(".moi.json")[0]
         reports[prefix]["heterozygosity"] = parse_json(rep)
         reports[prefix]["heterozygosity"]["het_dir"] = "/".join(os.path.abspath(rep).split("/")[:-1])
 
     map_tab = make_map_table(reports)
     map_df = pd.DataFrame(map_tab[1:], columns=map_tab[0])
+
+    map_df.to_csv("./run_results.csv")
 
     gg_dict = { k : {int(w) : g for w, g in v["mapping"]["mapping_stats"]["gg_array"].items()} for k, v in reports.items() }
     gg_fig = make_gg_plot(gg_dict, fig_height)

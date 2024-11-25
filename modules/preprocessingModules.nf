@@ -251,6 +251,8 @@ process map2Ref {
   memory '15 GB'
 
   publishDir "${params.output_dir}/${sample_name}/preprocessing/Map", mode: 'copy', pattern: '*_alnStats.txt'
+  publishDir "${params.output_dir}/phylo", mode: 'copy', pattern: '*.missing.bed'
+
 
   input:
   tuple val(sample_name), path(fq1), path(fq2)
@@ -258,24 +260,28 @@ process map2Ref {
 
   output:
   tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: bam
+  path("${sample_name}.missing.bed"), emit: missing_bam
   path("${sample_name}_alnStats.txt"), emit: map_stats
 
   script:
   bam = "${sample_name}.sorted.bam"
   bai = "${sample_name}.bam.bai"
   stats = "${sample_name}_alnStats.txt"
-
+  scripts = "${baseDir}/bin"
   """
   echo ${ref_bt2index}
   bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+  samtools depth ${bam} -aa | python3 ${scripts}/filter_depth.py 5 > ${sample_name}.missing.bed
   """
 
   stub:
   bam = "${sample_name}.sorted.bam"
+  missing_bed "${sample_name}.missing.bed"
   stats_txt = "${sample_name}_alnStats.txt"
 
   """
   touch ${bam}
+  touch ${missing_bed}
   touch ${stats_txt}
   """
 }

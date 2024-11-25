@@ -1,15 +1,13 @@
 // modules for identifying SNPs in mapped reads
 
-process getMOI {
+process callVariants {
   /**
-  * Investigate sample heterozygosity
+  * Call variants
   */
 
   tag { sample_name }
 
   publishDir "${params.output_dir}/${sample_name}/VCF", mode: 'copy', overwrite: 'true', pattern: '*.vcf.gz'
-  publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.json'
-  publishDir "${params.output_dir}/${sample_name}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.png'
 
   memory '15 GB'
   cpus 2
@@ -20,9 +18,9 @@ process getMOI {
   val(ref_id)
 
   output:
-  tuple val(sample_name), path(bam), path(mapstats), path("${sample_name}.heterozygosity.json"), path("${sample_name}.*.png"), path("${sample_name}.vcf.gz"), emit: bam_pp_moi
-  // path("${sample_name}.heterozygosity.json"), emit: moi_json
-  // tuple path("${sample_name}.bafscore.png"), path("${sample_name}.bafplot.png"), emit: moi_plots
+  tuple val(sample_name), path(bam), path(mapstats), path("${sample_name}.vcf.gz"), emit: bam_vcf_tup
+  path("${sample_name}.vcf.gz"), emit: vcf
+
 
   script:
   scripts = "${baseDir}/bin"
@@ -30,19 +28,64 @@ process getMOI {
   freebayes -p 2 -P 0 -C 2 -F 0.05 --min-coverage 5 --min-repeat-entropy 1.0 --min-alternate-qsum 30 -q 13 -m 1 --strict-vcf -f ${fasta} ${bam} > ${sample_name}.tmp.vcf
   sed -i \'s/##FORMAT=<ID=GQ,Number=1,Type=Integer/##FORMAT=<ID=GQ,Number=1,Type=String/\' ${sample_name}.tmp.vcf
   sed -i \'s/unknown/${sample_name}/\' ${sample_name}.tmp.vcf
+
   python3 ${scripts}/filter_vcf.py  ${sample_name}.tmp.vcf --qual 30 --only_snp -o ${sample_name}.vcf
-  python3 ${scripts}/get_moi.py ${sample_name}.vcf ${sample_name}
 
   bgzip -c ${sample_name}.vcf > ${sample_name}.vcf.gz
   """
 
   stub:
   """
-  freebayes --version
-  touch ${sample_name}.heterozygosity.json
-  touch ${sample_name}.bafscore.png
-  touch ${sample_name}.bafplot.png
   touch ${sample_name}.vcf.gz
+  """
+}
+
+process moi {
+  /**
+  * Investigate multiplicity of infection
+  */
+
+  publishDir "${params.output_dir}/MOI", mode: 'copy', overwrite: 'true', pattern: 'filtered_merged.vcf.gz'
+  publishDir "${params.output_dir}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.json'
+  publishDir "${params.output_dir}/MOI", mode: 'copy', overwrite: 'true', pattern: '*.png'
+
+  memory '15 GB'
+  cpus 2
+
+  input:
+  path(vcfs)
+  tuple path(fasta), path(gff)
+
+  output:
+  path("*.moi.json"), emit: moi_json
+  path("*.png"), emit: moi_png
+  path("fws.csv"), emit: fws_csv
+  path("filtered_merged.vcf.gz"), emit: merged_vcf
+
+  script:
+  scripts = "${baseDir}/bin"
+  """
+  for v in ./*vcf.gz; do
+      bcftools index \$v
+  done
+
+  bcftools merge -g ${fasta} -m snps ./*vcf.gz > merged.vcf
+
+  vcftools --vcf ./merged.vcf --remove-indels --maf 0.05 --max-missing 0.1 --minQ 30 --min-meanDP 5 --minDP 5 --recode --stdout > filtered_merged.vcf
+
+  Rscript ${scripts}/getFWS.R --vcf=filtered_merged.vcf
+
+  python3 ${scripts}/get_moi.py filtered_merged.vcf fws.csv
+  
+  bgzip filtered_merged.vcf
+  """
+
+  stub:
+  """
+  touch fws.csv
+  touch filtered_merged.vcf.gz
+  touch test.moi.json
+  touch test.png
   """
 }
 
@@ -138,7 +181,7 @@ process makeJSON {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(bam), path(mapstats_json), path(moi_json), path(moi_png), path(vcf)
+  tuple val(sample_name), path(bam), path(mapstats_json), path(vcf)
   path(typingreport_json)
   path(al_stats_json)
 
@@ -170,10 +213,12 @@ process makeSampleReports {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(bam), path(mapstats_json), path(moi_json), path(moi_png), path(vcf)
+  tuple val(sample_name), path(bam), path(mapstats_json), path(vcf)
   path(env_json)
   path(snpreport_json)
   path(snp_png)
+  path(moi_json)
+  path(moi_png)
 
   output:
   path("${sample_name}_report.pdf"), emit: report_pdf
@@ -181,7 +226,7 @@ process makeSampleReports {
   script:
   scripts = "${baseDir}/bin"
   """
-  python3 ${scripts}/make_sample_report_pdf.py --env ${env_json} --report ${snpreport_json} --id ${sample_name} --moi_json ${moi_json} --moi_plots ${moi_png} --png ${snp_png}
+  python3 ${scripts}/make_sample_report_pdf.py --env ${env_json} --report ${snpreport_json} --id ${sample_name} --moi_json ${sample_name}.moi.json --png ${snp_png}
   """
 
   stub:
@@ -209,13 +254,12 @@ process makeRunReport {
   path(dist_matrix)
 
   output:
-  path("Parapipe_report.pdf"), emit: run_report_pdf
   path("Parapipe_report.html"), emit: run_report_html
+  path("run_results.csv"), emit: results_csv
 
   script:
   scripts = "${baseDir}/bin"
   """
-  python3 ${scripts}/make_run_report_pdf.py --env ${env_json} --report ${snpreport_jsons} --moi_json ${moi_json}
   python3 ${scripts}/html_report.py --env ${env_json} --moi_json ${moi_json} --report ${snpreport_jsons} --dist_matrix ${dist_matrix} --multiqc ${baseDir}/${params.output_dir}/multiqc_report.html
   """
 

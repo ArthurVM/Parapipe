@@ -248,7 +248,7 @@ def make_map_table(json_data):
 
     array_names = ["coverage_breadth_hist", "gg_array"]
 
-    table_list = [["ID", "Mean DOC", "Median DOC", "BOC>=5x", "GG area", "Norm GG area", "Av. Qual", "Av. Insert Size", "Het. k", "Bound. Prob", "SNPs: total (unique)"]]
+    table_list = [["ID", "Mean DOC", "Median DOC", "BOC>=5x", "GG area", "Norm GG area", "Av. Qual", "Av. Insert Size", "Fws", "Het. k", "Bound. Prob", "SNPs: total (unique)"]]
 
     for sample, report in json_data.items():
         mapping_stats = report["mapping"]["mapping_stats"]
@@ -261,6 +261,8 @@ def make_map_table(json_data):
         else:
             het_k = report["heterozygosity"]["k"]
             het_bp = np.round(report["heterozygosity"]["boundary_prob"], 3)
+            
+        fws = report["heterozygosity"]["fws"]
 
         table_list.append([ sample,\
             np.round(mapping_stats["mean_depth_of_coverage"], 1), \
@@ -270,6 +272,7 @@ def make_map_table(json_data):
             np.round(mapping_stats["nGG_area"], 3), \
             np.round(mapping_stats["average_quality"], 1), \
             mapping_stats["insert_size_average"], \
+            np.round(fws, 3), \
             het_k, \
             het_bp, \
             f"{al_stats['total_snps']} ({len(al_stats['unique_snps'])})"])
