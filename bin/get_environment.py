@@ -33,7 +33,7 @@ def get_versions(singpath):
 def main(argv):
     env = {}
     
-    input_dir, output_dir, ref, yaml, db, singpath, read_n_threshold = argv
+    input_dir, output_dir, ref, yaml, db, singpath, read_n_threshold, mincov, missing, maf, mac = argv
 
     current_datetime = datetime.datetime.now()
     formatted_date = current_datetime.strftime("%Y-%m-%d")
@@ -49,7 +49,12 @@ def main(argv):
     params["ref"] = ref
     params["yaml"] = yaml
     params["db"] = db
+    params["singpath"] = singpath
     params["read_n_threshold"] = read_n_threshold
+    params["mincov"] = mincov
+    params["missing"] = missing
+    params["maf"] = maf
+    params["mac"] = mac
 
     versions = get_versions(singpath)
 

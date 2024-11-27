@@ -1,5 +1,6 @@
 // modules for mapping and processing fastq files
 
+
 process checkFqValidity {
   /**
   * Check if fastq files are valid
@@ -14,53 +15,54 @@ process checkFqValidity {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
+    tuple val(sample_name), path(fq1), path(fq2)
 
   output:
-  tuple val(sample_name), path(fq1), path(fq2), stdout, emit: checkValidity_fqs
-  path("${sample_name}.err", emit: checkValidity_log)
+    tuple val(sample_name), path(fq1), path(fq2), stdout, emit: checkValidity_fqs
+    path("${sample_name}.err", emit: checkValidity_log)
 
   script:
-  error_log = "${sample_name}.err"
+    error_log = "${sample_name}.err"
 
-  """
-  is_ok=\$(fqtools validate $fq1 $fq2)
+    """
+    is_ok=\$(fqtools validate $fq1 $fq2)
 
-  if [ \$is_ok == 'OK' ]; then printf 'OK' && printf "" >> ${error_log}; else echo "error: sample did not pass fqtools validation check\n \$is_ok" >> ${error_log}; fi
-  """
+    if [ \$is_ok == 'OK' ]; then printf 'OK' && printf "" >> ${error_log}; else echo "error: sample did not pass fqtools validation check\n \$is_ok" >> ${error_log}; fi
+    """
 
   stub:
-  error_log  = "${sample_name}.err"
+    error_log  = "${sample_name}.err"
 
-  """
-  printf OK
-  touch ${error_log}
-  """
+    """
+    printf OK
+    touch ${error_log}
+    """
 }
 
+
 process countReads {
-    /**
-    * fail sample if there are < 1M raw reads
-    */
+  /**
+  * fail sample if there are < 1M raw reads
+  */
 
-    tag { sample_name }
+  tag { sample_name }
 
-    publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
+  publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
-    memory '5 GB'
+  memory '5 GB'
 
-    input:
+  input:
     tuple val(sample_name), path(fq1), path(fq2), val(is_ok)
     val(read_n_threshold)
 
-    when:
+  when:
     is_ok == 'OK'
 
-    output:
+  output:
     tuple val(sample_name), path(fq1), path(fq2), stdout, emit: countReads_fqs
     path("${sample_name}.err", emit: countReads_log)
 
-    script:
+  script:
     error_log = "${sample_name}.err"
 
     """
@@ -69,7 +71,7 @@ process countReads {
     if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= $read_n_threshold pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
-    stub:
+  stub:
     error_log = "${sample_name}.err"
 
     """
@@ -78,31 +80,32 @@ process countReads {
     """
 }
 
+
 process fastp {
-    /**
-    * confirm that there > 1M reads after cleaning with fastp
-    */
+  /**
+  * confirm that there > 1M reads after cleaning with fastp
+  */
 
-    tag { sample_name }
+  tag { sample_name }
 
-    publishDir "${params.output_dir}/${sample_name}/raw_read_QC_reports", mode: 'copy', pattern: '*.json'
-    publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
+  publishDir "${params.output_dir}/${sample_name}/raw_read_QC_reports", mode: 'copy', pattern: '*.json'
+  publishDir "${params.output_dir}/${sample_name}", mode: 'copy', overwrite: 'true', pattern: '*.err'
 
-    memory '5 GB'
+  memory '5 GB'
 
-    input:
+  input:
     tuple val(sample_name), path(fq1), path(fq2), val(run_fastp)
     val(read_n_threshold)
 
-    when:
+  when:
     run_fastp =~ /${sample_name}/
 
-    output:
+  output:
     tuple val(sample_name), path("${sample_name}_cleaned_1.fq.gz"), path("${sample_name}_cleaned_2.fq.gz"), stdout, emit: fastp_fqs
     path("${sample_name}_fastp.json", emit: fastp_json)
     path("${sample_name}.err", emit: fastp_log)
 
-    script:
+  script:
     clean_fq1  = "${sample_name}_cleaned_1.fq.gz"
     clean_fq2  = "${sample_name}_cleaned_2.fq.gz"
     fastp_json = "${sample_name}_fastp.json"
@@ -119,7 +122,7 @@ process fastp {
     if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= $read_n_threshold pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
-    stub:
+  stub:
     clean_fq1  = "${sample_name}_cleaned_1.fq.gz"
     clean_fq2  = "${sample_name}_cleaned_2.fq.gz"
     fastp_json = "${sample_name}_fastp.json"
@@ -136,6 +139,7 @@ process fastp {
     """
 }
 
+
 process fastQC {
   /**
   * run FastQC on each fastq pair and copy reports to a subdir in outputdir
@@ -150,30 +154,31 @@ process fastQC {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
+    tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
 
   output:
-  path("*", emit: fastQC_report)
+    path("*", emit: fastQC_report)
 
   when:
-  enough_reads =~ /${sample_name}/
+    enough_reads =~ /${sample_name}/
 
   script:
-  fqc_log = "${sample_name}fqc.log"
+    fqc_log = "${sample_name}fqc.log"
 
-  """
-  cat $fq1 $fq2 > ${sample_name}.fq.gz
-  fastqc ${sample_name}.fq.gz 1> $fqc_log
-  rm ${sample_name}.fq.gz
-  """
+    """
+    cat $fq1 $fq2 > ${sample_name}.fq.gz
+    fastqc ${sample_name}.fq.gz 1> $fqc_log
+    rm ${sample_name}.fq.gz
+    """
 
   stub:
-  report="${sample_name}.html"
+    report="${sample_name}.html"
 
-  """
-  touch ${report}
-  """
+    """
+    touch ${report}
+    """
 }
+
 
 process multiQC {
   /**
@@ -185,23 +190,24 @@ process multiQC {
   memory '5 GB'
 
   input:
-  path(fastqc_files)
+    path(fastqc_files)
 
   output:
-  path("multiqc_report.html", emit: multiQC_report)
+    path("multiqc_report.html", emit: multiQC_report)
 
   script:
-  """
-  echo ${fastqc_files}
-  multiqc ./
-  """
+    """
+    echo ${fastqc_files}
+    multiqc ./
+    """
 
   stub:
-  multiQC_report="multiqc_report.html"
-  """
-  touch ${multiQC_report}
-  """
+    multiQC_report="multiqc_report.html"
+    """
+    touch ${multiQC_report}
+    """
 }
+
 
 process trimGalore {
   /**
@@ -214,31 +220,32 @@ process trimGalore {
   memory '10 GB'
 
   input:
-  tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
+    tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
 
   output:
-  tuple path("${fq1}_trimming_report.txt"), path("${fq2}_trimming_report.txt"), emit: tg_reports
-  tuple val(sample_name), path("*_val_1.*"), path("*_val_2.*"), emit: tg_fqs
+    tuple path("${fq1}_trimming_report.txt"), path("${fq2}_trimming_report.txt"), emit: tg_reports
+    tuple val(sample_name), path("*_val_1.*"), path("*_val_2.*"), emit: tg_fqs
 
   script:
-  tg_log = "${sample_name}_tg.log"
-  """
-  trim_galore --paired $fq1 $fq2 1> $tg_log
-  """
+    tg_log = "${sample_name}_tg.log"
+    """
+    trim_galore --paired $fq1 $fq2 1> $tg_log
+    """
 
   stub:
-  rep1 = "${fq1}_trimming_report.txt"
-  rep2 = "${fq2}_trimming_report.txt"
-  trim_fq1 = "${sample_name}_val_1.fq.gz"
-  trim_fq2 = "${sample_name}_val_2.fq.gz"
+    rep1 = "${fq1}_trimming_report.txt"
+    rep2 = "${fq2}_trimming_report.txt"
+    trim_fq1 = "${sample_name}_val_1.fq.gz"
+    trim_fq2 = "${sample_name}_val_2.fq.gz"
 
-  """
-  touch ${rep1}
-  touch ${rep2}
-  touch ${trim_fq1}
-  touch ${trim_fq2}
-  """
+    """
+    touch ${rep1}
+    touch ${rep2}
+    touch ${trim_fq1}
+    touch ${trim_fq2}
+    """
 }
+
 
 process map2Ref {
   /**
@@ -253,38 +260,38 @@ process map2Ref {
   publishDir "${params.output_dir}/${sample_name}/preprocessing/Map", mode: 'copy', pattern: '*_alnStats.txt'
   publishDir "${params.output_dir}/phylo", mode: 'copy', pattern: '*.missing.bed'
 
-
   input:
-  tuple val(sample_name), path(fq1), path(fq2)
-  path(ref_bt2index)
+    tuple val(sample_name), path(fq1), path(fq2)
+    path(ref_bt2index)
 
   output:
-  tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: bam
-  path("${sample_name}.missing.bed"), emit: missing_bam
-  path("${sample_name}_alnStats.txt"), emit: map_stats
+    tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: bam
+    path("${sample_name}.missing.bed"), emit: missing_bam
+    path("${sample_name}_alnStats.txt"), emit: map_stats
 
   script:
-  bam = "${sample_name}.sorted.bam"
-  bai = "${sample_name}.bam.bai"
-  stats = "${sample_name}_alnStats.txt"
-  scripts = "${baseDir}/bin"
-  """
-  echo ${ref_bt2index}
-  bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
-  samtools depth ${bam} -aa | python3 ${scripts}/filter_depth.py 5 > ${sample_name}.missing.bed
-  """
+    bam = "${sample_name}.sorted.bam"
+    bai = "${sample_name}.bam.bai"
+    stats = "${sample_name}_alnStats.txt"
+    scripts = "${baseDir}/bin"
+    """
+    echo ${ref_bt2index}
+    bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+    samtools depth ${bam} -aa | python3 ${scripts}/filter_depth.py 5 > ${sample_name}.missing.bed
+    """
 
   stub:
-  bam = "${sample_name}.sorted.bam"
-  missing_bed "${sample_name}.missing.bed"
-  stats_txt = "${sample_name}_alnStats.txt"
+    bam = "${sample_name}.sorted.bam"
+    missing_bed "${sample_name}.missing.bed"
+    stats_txt = "${sample_name}_alnStats.txt"
 
-  """
-  touch ${bam}
-  touch ${missing_bed}
-  touch ${stats_txt}
-  """
+    """
+    touch ${bam}
+    touch ${missing_bed}
+    touch ${stats_txt}
+    """
 }
+
 
 process picard {
   /**
@@ -297,26 +304,26 @@ process picard {
   publishDir "${params.output_dir}/bams", mode: 'copy', pattern: '*bam'
 
   input:
-  tuple val(sample_name), path(bam)
+    tuple val(sample_name), path(bam)
 
   output:
-  tuple val(sample_name), path("${sample_name}_grouped.bam"), emit: grouped_bam
-  // path("${sample_name}_metrics.txt"), emit: dedup_metrics
+    tuple val(sample_name), path("${sample_name}_grouped.bam"), emit: grouped_bam
 
   script:
-  dedup_log = "${sample_name}_dedup.log"
-  dedup_line="  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log"
-  """
-  java -jar /usr/local/bin/picard.jar AddOrReplaceReadGroups I=${bam} O=${sample_name}_grouped.bam SORT_ORDER=coordinate RGID=1 RGPU=bc RGLB=lib RGPL=illumina RGSM=${sample_name} CREATE_INDEX=True
-  """
-  stub:
-  grouped_bam = "${sample_name}_grouped.bam"
-  metrics = "${sample_name}_metrics.txt"
+    dedup_log = "${sample_name}_dedup.log"
+    dedup_line="  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log"
+    """
+    java -jar /usr/local/bin/picard.jar AddOrReplaceReadGroups I=${bam} O=${sample_name}_grouped.bam SORT_ORDER=coordinate RGID=1 RGPU=bc RGLB=lib RGPL=illumina RGSM=${sample_name} CREATE_INDEX=True
+    """
 
-  """
-  touch ${grouped_bam}
-  touch ${metrics}
-  """
+  stub:
+    grouped_bam = "${sample_name}_grouped.bam"
+    metrics = "${sample_name}_metrics.txt"
+
+    """
+    touch ${grouped_bam}
+    touch ${metrics}
+    """
 }
 
 
@@ -331,30 +338,30 @@ process summarise {
   memory '5 GB'
 
   input:
-  tuple val(sample_name), path(bam)
+    tuple val(sample_name), path(bam)
 
   output:
-  path "${sample_name}.GG", emit: GG
-  tuple val(sample_name), path(bam), path("${sample_name}_mapstats.json"), emit: bam_pre_out
+    path "${sample_name}.GG", emit: GG
+    tuple val(sample_name), path(bam), path("${sample_name}_mapstats.json"), emit: bam_pre_out
 
   script:
-  """
-  samtools depth -a ${bam} > ${sample_name}.doc.bed
-  python3 ${baseDir}/bin/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
-  samtools index ${bam}
-  samtools stats ${bam} > tmp.stats
-  python3 ${baseDir}/bin/parse_samtools_stats.py ${bam} tmp.stats ${sample_name}.doc.bed ${sample_name}.GG > ${sample_name}_mapstats.json
-  """
+    """
+    samtools depth -a ${bam} > ${sample_name}.doc.bed
+    python3 ${baseDir}/bin/gini.py ${sample_name}.doc.bed -G 5 1000 50 > ${sample_name}.GG
+    samtools index ${bam}
+    samtools stats ${bam} > tmp.stats
+    python3 ${baseDir}/bin/parse_samtools_stats.py ${bam} tmp.stats ${sample_name}.doc.bed ${sample_name}.GG > ${sample_name}_mapstats.json
+    """
 
   stub:
-  gg_file = "${sample_name}.GG"
-  doc_bed = "${sample_name}.doc.bed"
-  mapstats_json = "${sample_name}_mapstats.json"
-  """
-  samtools --version
-  python3 -V
-  touch ${gg_file}
-  touch ${doc_bed}
-  touch ${mapstats_json}
-  """
+    gg_file = "${sample_name}.GG"
+    doc_bed = "${sample_name}.doc.bed"
+    mapstats_json = "${sample_name}_mapstats.json"
+    """
+    samtools --version
+    python3 -V
+    touch ${gg_file}
+    touch ${doc_bed}
+    touch ${mapstats_json}
+    """
 }

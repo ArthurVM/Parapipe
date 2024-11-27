@@ -8,7 +8,7 @@ include {printHelp} from './modules/help.nf'
 include {captureEnv} from './modules/captureEnv.nf'
 include {prepRef} from './workflows/prepref.nf'
 include {preprocessing} from './workflows/preprocessing.nf'
-include {phylo} from './workflows/snp_analysis.nf'
+include {phyloMOI} from './workflows/phyloMOI.nf'
 
 /*
  ANSI escape codes to allow colour-coded output messages
@@ -72,9 +72,38 @@ else {
     mincov = params.mincov
 }
 
+if ( params.missing == null ) {
+    missing = 0.1
+}
+else {
+    missing = params.missing
+}
+
+if ( params.maf == null ) {
+    maf = 0.05
+}
+else {
+    maf = params.maf
+}
+
+if ( params.mac == null ) {
+    mac = 5
+}
+else {
+    mac = params.mac
+}
+
+
+
 log.info """
 ===================================================================================================
-P A R A P I P E
+                  ██████╗░░█████╗░██████╗░░█████╗░██████╗░██╗██████╗░███████╗
+                  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗██╔════╝
+                  ██████╔╝███████║██████╔╝███████║██████╔╝██║██████╔╝█████╗░░
+                  ██╔═══╝░██╔══██║██╔══██╗██╔══██║██╔═══╝░██║██╔═══╝░██╔══╝░░
+                  ██║░░░░░██║░░██║██║░░██║██║░░██║██║░░░░░██║██║░░░░░███████╗
+                  ╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═╝░░░░░╚══════╝
+===================================================================================================
 
 Parameters used:
 ---------------------------------------------------------------------------------------------------
@@ -86,6 +115,9 @@ Parameters used:
 --yaml                  ${yaml}
 --database              ${database}
 --mincov                ${mincov}
+--missing               ${missing}
+--maf                   ${maf}
+--mac                   ${mac}
 
 Runtime data:
 ---------------------------------------------------------------------------------------------------
@@ -98,32 +130,63 @@ Launch dir              ${workflow.launchDir}
 // main pipeline workflow
 workflow {
 
-  pattern = params.pattern
+    pattern = params.pattern
 	reads = params.input_dir + pattern
 	numfiles = file(reads) // count the number of files
 
-  Channel.fromFilePairs(reads, flat: true, checkIfExists: true, size: -1)
-   .ifEmpty { error "cannot find any files matching ${pattern} in ${params.input_dir}" }
-   .set{ input_files }
+    Channel.fromFilePairs(reads, flat: true, checkIfExists: true, size: -1)
+        .ifEmpty { error "cannot find any files matching ${pattern} in ${params.input_dir}" }
+        .set{ input_files }
 
   main:
 
-    captureEnv(params.input_dir, params.output_dir, params.ref, yaml, database, params.read_n_threshold)
+    /************************************************
+    *               ENV CAPTURE START               *
+    *************************************************/
+    captureEnv( params.input_dir, \
+                params.output_dir, \
+                params.ref, \
+                yaml, \
+                database, \
+                params.read_n_threshold, \
+                mincov, \
+                missing, \
+                maf, \
+                mac )
 
-    /*******************************
-    *    PREPREF WORKFLOW START    *
-    ********************************/
+
+
+    /************************************************
+    *            PREPREF WORKFLOW START             *
+    *************************************************/
     prepRef(params.ref)
 
-    /*******************************
-    * PREPROCESSING WORKFLOW START *
-    ********************************/
-    preprocessing(input_files, prepRef.out.ref_bt2index, read_n_threshold)
 
-    /*******************************
-    *      SNP WORKFLOW START      *
-    ********************************/
-    phylo(input_files, captureEnv.out.env_json, database, preprocessing.out.bam_pre, prepRef.out.refdata, params.ref, preprocessing.out.multiQC_report, yaml, mincov)
+
+    /************************************************
+    *          PREPROCESSING WORKFLOW START         *
+    *************************************************/
+    preprocessing(  input_files, \
+                    prepRef.out.ref_bt2index, \
+                    read_n_threshold    )
+
+
+
+    /************************************************
+    *      PARAPIPE SNP AND MOI WORKFLOW START      *
+    *************************************************/
+    phyloMOI(   input_files, \
+                captureEnv.out.env_json, \
+                database, \
+                preprocessing.out.bam_pre, \
+                prepRef.out.refdata, \
+                params.ref, \
+                preprocessing.out.multiQC_report, \
+                yaml, \
+                mincov, \
+                missing, \
+                maf, \
+                mac )
 }
 
 workflow.onComplete {

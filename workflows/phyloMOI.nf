@@ -11,7 +11,7 @@ include {makeSampleReports} from '../modules/phyloModules.nf'
 include {makeRunReport} from '../modules/phyloModules.nf'
 
 // define SNP workflow
-workflow phylo {
+workflow phyloMOI {
 
     take:
       input_files
@@ -23,6 +23,9 @@ workflow phylo {
       multiQC_report
       yaml
       mincov
+      missing
+      maf
+      mac
     
 
     main:
@@ -30,7 +33,7 @@ workflow phylo {
       callVariants(bam_pre, refdata, ref_id)
 
       // Carry out population Fws analysis
-      moi(callVariants.out.vcf.collect(), refdata)
+      moi(callVariants.out.vcf.collect(), refdata, missing, maf, mac)
 
       // Extract just bam files from tuple for collection
       formatPhyloInput(callVariants.out.bam_vcf_tup)
