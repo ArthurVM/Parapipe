@@ -48,14 +48,14 @@ For those who want to just run Parapipe out of the box with default parameters, 
 Lets say we have a dataset of paired end Cryptosporidium parvum NGS files in our directory, `/user/my_cparvum_data/`, which looks like:
 ```
 /user/my_cparvum_data/
-├── sample1_1.fastq.gz
-├── sample1_2.fastq.gz
-├── sample2_1.fastq.gz
-├── sample2_2.fastq.gz
-├── sample3_1.fastq.gz
-├── sample3_2.fastq.gz
-├── sample4_1.fastq.gz
-└── sample4_2.fastq.gz
+            ├── sample1_1.fastq.gz
+            ├── sample1_2.fastq.gz
+            ├── sample2_1.fastq.gz
+            ├── sample2_2.fastq.gz
+            ├── sample3_1.fastq.gz
+            ├── sample3_2.fastq.gz
+            ├── sample4_1.fastq.gz
+            └── sample4_2.fastq.gz
 ```
 The `--pattern` argument refers to the suffix with which we can pair files. In this case the suffix for forward reads are `_1.fastq.gz`, and reverse reads `_2.fastq.gz`. Consequently, we can use bash syntax to pair these files by setting `--pattern` to `'*_{1,2}.fastq.gz'`, which captures any files which end in `_1.fastq.gz` or `_2.fastq.gz` using the `*` wildcard, and pairs them by their shared prefix (e.g. `sample1`). This prefix will then be used as the ID for this sample during the run.
 
@@ -78,16 +78,19 @@ Description:
   General purpose parasite genomics pipeline. DEVELOPMENT VERSION.
 
 Mandatory Arguments:
-  --input_dir         the full path to the directory containing raw read files in paired-end fastq format.
-  --output_dir        output directory. Module output files will be written to subdirectories within this parent directory.
+  --input_dir         the full path to the directory containing raw read files in paired-end
+                      fastq format.
+  --output_dir        output directory. Module output files will be written to subdirectories
+                      within this parent directory.
   --pattern           regex pattern to match pairs of fastq files.
   --ref               the species ID of the reference genome to download and map against.
   --yaml              YAML file containing typing profiles.
 
 Optional Arguments:
-  --database          the path to a directory containing vcf files for constructing a phylogenetic tree.
-  --mincov            the minimum fraction of the genome which must be covered to a depth of 5x to include a sample in
-                      phylogenetic analysis. Default=0.8.
+  --database          the path to a directory containing vcf files for constructing a
+                      phylogenetic tree.
+  --mincov            the minimum fraction of the genome which must be covered to a depth of
+                      5x to include a sample in phylogenetic analysis. Default=0.8.
   --missing           the maximum allele missingness to include SNPs in MOI analysis. Default=0.1.
   --maf               the minimum minor allele frequency to include SNPs in MOI analysis. Default=0.05.
   --mac               the minimum minor allele depth to include SNPs in MOI analysis. Default=5.
