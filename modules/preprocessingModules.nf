@@ -25,7 +25,7 @@ process checkFqValidity {
     error_log = "${sample_name}.err"
 
     """
-    is_ok=\$(fqtools validate $fq1 $fq2)
+    is_ok=\$(fqtools validate ${fq1} ${fq2})
 
     if [ \$is_ok == 'OK' ]; then printf 'OK' && printf "" >> ${error_log}; else echo "error: sample did not pass fqtools validation check\n \$is_ok" >> ${error_log}; fi
     """
@@ -66,9 +66,9 @@ process countReads {
     error_log = "${sample_name}.err"
 
     """
-    num_reads=\$(fqtools count $fq1 $fq2)
+    num_reads=\$(fqtools count ${fq1} ${fq2})
 
-    if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= $read_n_threshold pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > ${read_n_threshold} )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: sample did not have >= ${read_n_threshold} pairs of raw reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
   stub:
@@ -113,13 +113,13 @@ process fastp {
     error_log  = "${sample_name}.err"
 
     """
-    fastp -i $fq1 -I $fq2 -o ${clean_fq1} -O ${clean_fq2} -j ${fastp_json} -h ${fastp_html} --length_required 50 --average_qual 10 --low_complexity_filter --correction --cut_right --cut_tail --cut_tail_window_size 1 --cut_tail_mean_quality 20
+    fastp -i ${fq1} -I ${fq2} -o ${clean_fq1} -O ${clean_fq2} -j ${fastp_json} -h ${fastp_html} --length_required 50 --average_qual 10 --low_complexity_filter --correction --cut_right --cut_tail --cut_tail_window_size 1 --cut_tail_mean_quality 20
 
     rm -rf ${fastp_html}
 
     num_reads=\$(fqtools count ${clean_fq1} ${clean_fq2})
 
-    if (( \$num_reads > $read_n_threshold )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= $read_n_threshold pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
+    if (( \$num_reads > ${read_n_threshold} )); then printf "" >> ${error_log} && printf "${sample_name}"; else echo "error: after fastp, sample did not have >= ${read_n_threshold} pairs of reads (it only contained \$num_reads)" >> ${error_log} && printf "fail"; fi
     """
 
   stub:
@@ -166,8 +166,8 @@ process fastQC {
     fqc_log = "${sample_name}fqc.log"
 
     """
-    cat $fq1 $fq2 > ${sample_name}.fq.gz
-    fastqc ${sample_name}.fq.gz 1> $fqc_log
+    cat ${fq1} ${fq2} > ${sample_name}.fq.gz
+    fastqc ${sample_name}.fq.gz 1> ${fqc_log}
     rm ${sample_name}.fq.gz
     """
 
@@ -228,8 +228,9 @@ process trimGalore {
 
   script:
     tg_log = "${sample_name}_tg.log"
+    
     """
-    trim_galore --paired $fq1 $fq2 1> $tg_log
+    trim_galore --paired ${fq1} ${fq2} 1> ${tg_log}
     """
 
   stub:
@@ -274,9 +275,10 @@ process map2Ref {
     bai = "${sample_name}.bam.bai"
     stats = "${sample_name}_alnStats.txt"
     scripts = "${baseDir}/bin"
+
     """
     echo ${ref_bt2index}
-    bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 $fq1 -2 $fq2 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
+    bowtie2 --very-sensitive -p ${task.cpus} -x ${ref_bt2index}/${params.ref} -1 ${fq1} -2 ${fq2} 2> ${sample_name}_alnStats.txt | samtools view -h - | samtools sort - -o ${bam}
     samtools depth ${bam} -aa | python3 ${scripts}/filter_depth.py 5 > ${sample_name}.missing.bed
     """
 
@@ -311,7 +313,8 @@ process picard {
 
   script:
     dedup_log = "${sample_name}_dedup.log"
-    dedup_line="  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> $dedup_log"
+    dedup_line="  java -jar /usr/local/bin/picard.jar MarkDuplicates INPUT=${bam} OUTPUT=${sample_name}_dedup.bam METRICS_FILE=${sample_name}_metrics.txt VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true 1> ${dedup_log}"
+    
     """
     java -jar /usr/local/bin/picard.jar AddOrReplaceReadGroups I=${bam} O=${sample_name}_grouped.bam SORT_ORDER=coordinate RGID=1 RGPU=bc RGLB=lib RGPL=illumina RGSM=${sample_name} CREATE_INDEX=True
     """

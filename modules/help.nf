@@ -14,6 +14,7 @@ log.info"""
     --yaml              YAML file containing typing profiles.
 
   Optional Arguments:
+    --read_n_threshold  the minimum number of read pairs in a paired end FASTQ run required for analysis.
     --database          the path to a directory containing vcf files for constructing a phylogenetic tree.
     --mincov            the minimum fraction of the genome which must be covered to a depth of 5x to include a sample in phylogenetic analysis. Default=0.8.
     --missing           the maximum allele missingness to include SNPs in MOI analysis. Default=0.1.

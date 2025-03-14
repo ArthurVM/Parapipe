@@ -25,6 +25,7 @@ process callVariants {
 
   script:
     scripts = "${baseDir}/bin"
+    
     """
     freebayes -p 2 -P 0 -C 2 -F 0.05 --min-coverage 5 --min-repeat-entropy 1.0 --min-alternate-qsum 30 -q 13 -m 1 --strict-vcf -f ${fasta} ${bam} > ${sample_name}.tmp.vcf
     sed -i \'s/##FORMAT=<ID=GQ,Number=1,Type=Integer/##FORMAT=<ID=GQ,Number=1,Type=String/\' ${sample_name}.tmp.vcf
@@ -69,6 +70,7 @@ process moi {
 
   script:
     scripts = "${baseDir}/bin"
+
     """
     for v in ./*vcf.gz; do
         bcftools index \$v
@@ -116,6 +118,7 @@ process molTyping_phylo {
 
   script:
     scripts = "${baseDir}/bin"
+
     """
     python3 ${scripts}/get_MLVA_consensus.py ${vars_yaml} --bams ./*bam
     """
@@ -158,6 +161,7 @@ process wgSNV_phylo {
 
   script:
     scripts = "${baseDir}/bin"
+
     """
     for v in ./*vcf.gz; do
         tabix -f -p vcf \$v
@@ -199,6 +203,7 @@ process makeJSON {
   script:
     scripts = "${baseDir}/bin"
     st_stats_csv = "${sample_name}_ST_stats.csv"
+
     """
     python3 ${scripts}/make_report_json.py ${sample_name} ${mapstats_json} ${typingreport_json} ${al_stats_json} > ${sample_name}_report.json
     """
@@ -234,6 +239,7 @@ process makeSampleReports {
 
   script:
     scripts = "${baseDir}/bin"
+
     """
     python3 ${scripts}/make_sample_report_pdf.py --env ${env_json} --report ${snpreport_json} --id ${sample_name} --moi_json ${sample_name}.moi.json --png ${snp_png}
     """
@@ -269,6 +275,7 @@ process makeRunReport {
 
   script:
     scripts = "${baseDir}/bin"
+
     """
     python3 ${scripts}/html_report.py --env ${env_json} --moi_json ${moi_json} --report ${snpreport_jsons} --dist_matrix ${dist_matrix} --multiqc ${baseDir}/${params.output_dir}/multiqc_report.html
     """

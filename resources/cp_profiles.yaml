@@ -1,6 +1,6 @@
 MLVA :
-  bed : /home/amorris/BioInf/Parapipe/resources/MLVA_new.bed
+  bed : /PATH/TO/MLVA_new.bed
   missing : 0
 gp60 :
-  bed : /home/amorris/BioInf/Parapipe/resources/gp60.bed
+  bed : /PATH/TO/gp60.bed
   missing : 0

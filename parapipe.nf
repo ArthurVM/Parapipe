@@ -48,6 +48,7 @@ if ( params.yaml == null ) {
     yaml = "false"
 }
 else {
+    print("WARNING: typing functionality will be deprecated in version 0.2")
     yaml = params.yaml
 }
 
@@ -148,7 +149,7 @@ workflow {
                 params.ref, \
                 yaml, \
                 database, \
-                params.read_n_threshold, \
+                read_n_threshold, \
                 mincov, \
                 missing, \
                 maf, \

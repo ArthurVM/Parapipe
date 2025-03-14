@@ -29,7 +29,7 @@ workflow phyloMOI {
     
 
     main:
-      // Investigate sample heterogeneity
+      // Call variants
       callVariants(bam_pre, refdata, ref_id)
 
       // Carry out population Fws analysis
