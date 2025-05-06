@@ -12,11 +12,11 @@ Parapipe supports paired end Next-Generation Sequencing data and performs thorou
 
 ## Features
 
-- 🧬 **Quality Control**: Automated read pre-processing, filtering, and QC reporting ([fastp](https://github.com/OpenGene/fastp), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [MultiQC](https://multiqc.info/), [Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)).
-- 🔬 **Variant Calling & SNP Analysis**: Variant calling and high-resolution SNP space analysis ([Samtools](http://www.htslib.org/), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [FreeBayes](https://github.com/ekg/freebayes)).
-- 🧑‍🔬 **Multiplicity of Infection (MOI) Characterisation**: Identifies mixed infections and within-host diversity ([PyMOI](https://github.com/ArthurVM/PyMOI), [Moimix](https://github.com/bahlolab/moimix)).
-- 📊 **Phylogenomic Analysis**: Generates SNP-based phylogenetic trees and clustering (Ardal, [IQtree2](https://github.com/iqtree/iqtree2)).
-- 🏗 **Modular and Scalable**: Built using [**Nextflow DSL2**](https://www.nextflow.io/), containerized with [**Singularity**](https://sylabs.io/guides/3.0/user-guide/), ensuring portability and reproducibility.
+- **Quality Control**: Automated read pre-processing, filtering, and QC reporting ([fastp](https://github.com/OpenGene/fastp), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [MultiQC](https://multiqc.info/), [Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)).
+- **Variant Calling & SNP Analysis**: Variant calling and high-resolution SNP space analysis ([Samtools](http://www.htslib.org/), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [FreeBayes](https://github.com/ekg/freebayes)).
+- **Multiplicity of Infection (MOI) Characterisation**: Identifies mixed infections and within-host diversity ([PyMOI](https://github.com/ArthurVM/PyMOI), [Moimix](https://github.com/bahlolab/moimix)).
+- **Phylogenomic Analysis**: Generates SNP-based phylogenetic trees and clustering (Ardal, [IQtree2](https://github.com/iqtree/iqtree2)).
+- **Modular and Scalable**: Built using [**Nextflow DSL2**](https://www.nextflow.io/), containerized with [**Singularity**](https://sylabs.io/guides/3.0/user-guide/), ensuring portability and reproducibility.
 
 ## Installation
 
