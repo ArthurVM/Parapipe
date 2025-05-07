@@ -102,5 +102,8 @@ singularity           run with singularity image
 ## Output
 Parapipe will output a directory which contains key intermediate and analysis files which can be used for further analysis. A report is produced and deposited in the output directory as `Parapipe_report.html`.
 
+## Suggestions and Requests
+If you have any suggestions for functionality, requests for directions on usage or report interpretation, or if you would just like to reach out to discuss Parapipe then please don't hesitate to contact me at morrisa28@cardiff.ac.uk. Alternatively you may wish to post an issue using the GitHub issues tab.
+
 ## Citing Parapipe
 If you use Parapipe to perform analysis of your dataset, please cite the preprint at https://www.biorxiv.org/content/10.1101/2025.01.16.633364v1
