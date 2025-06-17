@@ -38,6 +38,8 @@ process callVariants {
 
   stub:
     """
+    freebayes --version
+    python3 -V
     touch ${sample_name}.vcf.gz
     """
 }
@@ -89,6 +91,10 @@ process moi {
 
   stub:
     """
+    bcftools -v
+    vcftools --version
+    Rscript --version
+    python3 -V
     touch fws.csv
     touch filtered_merged.vcf.gz
     touch test.moi.json
@@ -125,6 +131,8 @@ process molTyping_phylo {
 
   stub:
     """
+    python3 -V
+    touch typing_report.json
     touch iqtree.json
     touch stub.nxs
     touch allele_stats.json
@@ -173,6 +181,8 @@ process wgSNV_phylo {
 
   stub:
     """
+    tabix --version
+    python3 -V
     touch stub.snps.bed
     touch allele_matrix.csv
     touch stub.png
@@ -211,6 +221,7 @@ process makeJSON {
 
   stub:
     """
+    python3 -V
     touch ${sample_name}_report.json
     """
 }
@@ -247,6 +258,7 @@ process makeSampleReports {
 
   stub:
     """
+    python3 -V
     touch ${sample_name}_report.pdf
     """
 }
@@ -283,6 +295,7 @@ process makeRunReport {
 
   stub:
     """
+    python3 -V
     touch run_results.csv
     touch Parapipe_report.html
     """

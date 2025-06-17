@@ -332,6 +332,12 @@ process picard {
     metrics = "${sample_name}_metrics.txt"
 
     """
+    if [ ! -f /usr/local/bin/picard.jar ]; then
+      echo "ERROR: Picard JAR not found at /usr/local/bin/picard.jar for stub run." >&2
+      exit 1
+    fi
+    echo "Picard JAR found at /usr/local/bin/picard.jar (stub check)."
+    
     touch ${grouped_bam}
     touch ${metrics}
     """
