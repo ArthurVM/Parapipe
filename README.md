@@ -12,11 +12,11 @@ Parapipe supports paired end Next-Generation Sequencing data and performs thorou
 
 ## Features
 
-- 🧬 **Quality Control**: Automated read pre-processing, filtering, and QC reporting ([fastp](https://github.com/OpenGene/fastp), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [MultiQC](https://multiqc.info/), [Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)).
-- 🔬 **Variant Calling & SNP Analysis**: Variant calling and high-resolution SNP space analysis ([Samtools](http://www.htslib.org/), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [FreeBayes](https://github.com/ekg/freebayes)).
-- 🧑‍🔬 **Multiplicity of Infection (MOI) Characterisation**: Identifies mixed infections and within-host diversity ([PyMOI](https://github.com/ArthurVM/PyMOI), [Moimix](https://github.com/bahlolab/moimix)).
-- 📊 **Phylogenomic Analysis**: Generates SNP-based phylogenetic trees and clustering (Ardal, [IQtree2](https://github.com/iqtree/iqtree2)).
-- 🏗 **Modular and Scalable**: Built using [**Nextflow DSL2**](https://www.nextflow.io/), containerized with [**Singularity**](https://sylabs.io/guides/3.0/user-guide/), ensuring portability and reproducibility.
+- **Quality Control**: Automated read pre-processing, filtering, and QC reporting ([fastp](https://github.com/OpenGene/fastp), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [MultiQC](https://multiqc.info/), [Trim Galore](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)).
+- **Variant Calling & SNP Analysis**: Variant calling and high-resolution SNP space analysis ([Samtools](http://www.htslib.org/), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [FreeBayes](https://github.com/ekg/freebayes)).
+- **Multiplicity of Infection (MOI) Characterisation**: Identifies mixed infections and within-host diversity ([PyMOI](https://github.com/ArthurVM/PyMOI), [Moimix](https://github.com/bahlolab/moimix)).
+- **Phylogenomic Analysis**: Generates SNP-based phylogenetic trees and clustering (Ardal, [IQtree2](https://github.com/iqtree/iqtree2)).
+- **Modular and Scalable**: Built using [**Nextflow DSL2**](https://www.nextflow.io/), containerized with [**Singularity**](https://sylabs.io/guides/3.0/user-guide/), ensuring portability and reproducibility.
 
 ## Installation
 
@@ -101,6 +101,9 @@ singularity           run with singularity image
 
 ## Output
 Parapipe will output a directory which contains key intermediate and analysis files which can be used for further analysis. A report is produced and deposited in the output directory as `Parapipe_report.html`.
+
+## Suggestions and Requests
+If you have any suggestions for functionality, requests for directions on usage or report interpretation, or if you would just like to reach out to discuss Parapipe then please don't hesitate to contact me at morrisa28@cardiff.ac.uk. Alternatively you may wish to post an issue using the GitHub issues tab.
 
 ## Citing Parapipe
 If you use Parapipe to perform analysis of your dataset, please cite the preprint at https://www.biorxiv.org/content/10.1101/2025.01.16.633364v1
