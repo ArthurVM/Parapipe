@@ -1,0 +1,66 @@
+name: Parapipe CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.20'
+
+      - name: Install build dependencies for Apptainer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libseccomp-dev \
+            pkg-config \
+            squashfs-tools \
+            cryptsetup \
+            uuid-dev \
+            libgpgme11-dev \
+            libssl-dev
+
+      - name: Install Apptainer (Singularity)
+        run: |
+          export APPTAINER_VERSION=1.2.5 # Specify a stable Apptainer version
+          wget "https://github.com/apptainer/apptainer/releases/download/v${APPTAINER_VERSION}/apptainer_${APPTAINER_VERSION}_amd64.deb"
+          sudo apt-get install -y ./apptainer_${APPTAINER_VERSION}_amd64.deb
+          rm ./apptainer_${APPTAINER_VERSION}_amd64.deb
+          echo "Apptainer version:"
+          apptainer --version
+
+      - name: Install Nextflow
+        run: |
+          curl -s https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+          echo "Nextflow version:"
+          nextflow -v
+
+      - name: Build Singularity/Apptainer containers
+        run: |
+          echo "Building Singularity/Apptainer containers..."
+          cd singularity
+          bash singularity_build.sh
+          cd ../
+          echo "Singularity/Apptainer containers build process finished. Listing built SIFs:"
+          ls -l singularity/
+
+      - name: Run Nextflow stub test
+        run: |
+          nextflow run ./parapipe.nf -stub \
+            -profile singularity \
+            --input_dir ./test_data/input \
+            --output_dir ./test_data/output \
+            --ref cryptosporidium_parvum \
+            --pattern "*_R{1,2}.fastq.gz"
