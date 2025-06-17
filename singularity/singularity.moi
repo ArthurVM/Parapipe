@@ -44,7 +44,7 @@ echo " INSTALLING R PACKAGES "
 echo ""
 echo ""
 Rscript -e 'install.packages(c("BiocManager", "optparse", "httr", "glue", "digest"), repos="https://cran.rstudio.com/")'
-Rscript -e 'BiocManager::install(version = "3.20")'
+Rscript -e 'BiocManager::install(version = "3.21")'
 Rscript -e 'require(BiocManager); BiocManager::install("SeqArray")'
 
 apt-get -y install freebayes=${freebayes_version}

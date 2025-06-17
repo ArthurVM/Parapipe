@@ -78,4 +78,12 @@ process formatPhyloInput {
     """
     echo /${sample_name}/
     """
+
+    stub:
+    """
+    touch ${bam}
+    touch ${mapstats_jsons}
+    touch ${vcf}
+    echo /${sample_name}/
+    """
 }

@@ -75,6 +75,7 @@ process countReads {
     error_log = "${sample_name}.err"
 
     """
+    fqtools -v
     printf ${sample_name}
     touch ${error_log}
     """
@@ -130,6 +131,8 @@ process fastp {
     error_log  = "${sample_name}.err"
 
     """
+    fastp --version
+    fqtools -v
     printf ${sample_name}
     touch ${error_log}
     touch ${clean_fq1}
@@ -175,6 +178,7 @@ process fastQC {
     report="${sample_name}.html"
 
     """
+    fastqc -v
     touch ${report}
     """
 }
@@ -204,6 +208,7 @@ process multiQC {
   stub:
     multiQC_report="multiqc_report.html"
     """
+    multiqc --version
     touch ${multiQC_report}
     """
 }
@@ -262,7 +267,7 @@ process map2Ref {
   publishDir "${params.output_dir}/phylo", mode: 'copy', pattern: '*.missing.bed'
 
   input:
-    tuple val(sample_name), path(fq1), path(fq2)
+    tuple val(sample_name), path(fq1), path(fq2), val(enough_reads)
     path(ref_bt2index)
 
   output:
@@ -284,10 +289,13 @@ process map2Ref {
 
   stub:
     bam = "${sample_name}.sorted.bam"
-    missing_bed "${sample_name}.missing.bed"
+    missing_bed = "${sample_name}.missing.bed"
     stats_txt = "${sample_name}_alnStats.txt"
 
     """
+    python3 -V
+    samtools --version
+    bowtie2 --version
     touch ${bam}
     touch ${missing_bed}
     touch ${stats_txt}

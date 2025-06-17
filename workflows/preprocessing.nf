@@ -32,11 +32,11 @@ workflow preprocessing {
       multiQC(fq_reports)
 
       // trim reads
-      // temporarily removed
-      trimGalore(fastp.out.fastp_fqs)
+      // DEPRECATED: handled by fastp
+      // trimGalore(fastp.out.fastp_fqs)
 
       // map reads to reference sequence to produce BAM
-      map2Ref(trimGalore.out.tg_fqs, ref_bt2index)
+      map2Ref(fastp.out.fastp_fqs, ref_bt2index)
 
       // run deduplication and read grouping on BAM
       picard(map2Ref.out.bam)

@@ -27,74 +27,37 @@ if (params.help) {
 }
 
 // check mandatory parameters
-if ( params.input_dir == null ) {
+if ( params.input_dir == "" ) {
     exit 1, "error: please provide an --input_dir argument. Use --help for an explenation for the parameters."
 }
 
-if ( params.output_dir == null ) {
+if ( params.output_dir == "" ) {
     exit 1, "error: please provide an --output_dir argument. Use --help for an explenation for the parameters."
 }
 
-if ( params.ref == null ) {
+if ( params.ref == "" ) {
     exit 1, "error: please provide a --ref argument. Use --help for an explenation for the parameters."
 }
 
-if ( params.pattern == null ) {
+if ( params.pattern == "" ) {
     exit 1, "error: please provide a --pattern argument. Use --help for an explenation for the parameters."
 }
 
-// initialise default parameters
-if ( params.yaml == null ) {
-    yaml = "false"
+// initialise parameters
+if ( params.yaml == "false" ) {
+    yaml = params.yaml
 }
 else {
     print("WARNING: typing functionality will be deprecated in version 0.2")
     yaml = params.yaml
 }
 
-if ( params.read_n_threshold == null ) {
-    read_n_threshold = 1000000
-}
-else {
-    read_n_threshold = params.read_n_threshold
-}
-
-if ( params.database == null ) {
-    database = "/false/"
-}
-else {
-    database = params.database
-}
-
-if ( params.mincov == null ) {
-    mincov = 0.8
-}
-else {
-    mincov = params.mincov
-}
-
-if ( params.missing == null ) {
-    missing = 0.1
-}
-else {
-    missing = params.missing
-}
-
-if ( params.maf == null ) {
-    maf = 0.05
-}
-else {
-    maf = params.maf
-}
-
-if ( params.mac == null ) {
-    mac = 5
-}
-else {
-    mac = params.mac
-}
-
-
+read_n_threshold = params.read_n_threshold
+database = params.database
+mincov = params.mincov
+missing = params.missing
+maf = params.maf
+mac = params.mac
 
 log.info """
 ===================================================================================================

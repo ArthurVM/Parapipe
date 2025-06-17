@@ -177,6 +177,7 @@ process wgSNV_phylo {
     touch allele_matrix.csv
     touch stub.png
     touch allele_stats.json
+    touch absolute_distance.csv
     """
 }
 
@@ -282,6 +283,7 @@ process makeRunReport {
 
   stub:
     """
-    touch Parapipe_report.pdf
+    touch run_results.csv
+    touch Parapipe_report.html
     """
 }

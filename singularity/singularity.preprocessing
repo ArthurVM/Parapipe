@@ -47,7 +47,7 @@ python3.6 -m pip install cutadapt==${cutadapt_version}
 curl -fsSL https://github.com/ArthurVM/NGS-Gini-Analysis-Toolkit/archive/refs/tags/v${ngstoolkit_version}.tar.gz | tar -xz \
 && pip3 install -r ./NGS-Gini-Analysis-Toolkit-${ngstoolkit_version}/dependancies.txt
 
-curl -fsSL "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${fastqc_version}.zip" -o fastqc_v${fastqc_version}.zip \
+curl -fsSL "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${fastqc_version}.zip" -o fastqc_v${fastqc_version}.zip \
 && unzip fastqc_v${fastqc_version}.zip \
 && chmod +x FastQC/fastqc \
 && mv FastQC/* /usr/local/bin \
