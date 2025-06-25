@@ -260,7 +260,7 @@ process map2Ref {
 
   tag { sample_name }
 
-  cpus 8
+  cpus 4
   memory '15 GB'
 
   publishDir "${params.output_dir}/${sample_name}/preprocessing/Map", mode: 'copy', pattern: '*_alnStats.txt'

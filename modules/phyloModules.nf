@@ -112,7 +112,7 @@ process molTyping_phylo {
   publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: '*.nxs'
 
   memory '15 GB'
-  cpus 8
+  cpus 2
 
   input:
     path(bam)
@@ -151,7 +151,7 @@ process wgSNV_phylo {
   publishDir "${params.output_dir}/phylo", mode: 'copy', overwrite: 'true', pattern: 'allele_matrix.csv'
 
   memory '15 GB'
-  cpus 8
+  cpus 2
 
   input:
     path(mapstats_jsons)
