@@ -5,6 +5,7 @@ maintainer="morrisa28@cardiff.ac.uk"
 about.summary="Parapipe preprocessing container"
 
 %post
+export DEBIAN_FRONTEND=noninteractive
 
 python_version=3.6.5
 trimgalore_version=0.6.10

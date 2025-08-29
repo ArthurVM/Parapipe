@@ -4,25 +4,21 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from os import path
 
-from pymoi.VCF import *
-from pymoi.plot import *
+from VCF import *
+from plot import *
 
 
 def gen_empty_plot(save_path):
-    # Create an empty plot
     fig, ax = plt.subplots()
 
-    # Add the text to the plot
     text = "too few heterogeneous alleles detected"
     ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=16, color='red')
 
-    # Remove axis labels and ticks
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel('')
     ax.set_ylabel('')
 
-    # Save the plot as a PNG image
     plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
 
 
@@ -31,6 +27,9 @@ def main(vcf_file, fws_csv):
     fws_df = pd.read_csv(fws_csv, index_col=0)
 
     vcf_obj = VCF(vcf_file)
+
+    maf = vcf_obj.getMAF()
+    print(vcf_obj.fws(maf.to_numpy()))
 
     for sample_id in vcf_obj.getSampleIds():
 
@@ -43,7 +42,7 @@ def main(vcf_file, fws_csv):
         if len(het_allele_df) >= 20:
             gmm = finite_mixture_model(het_allele_df, max_k=5, responsibility_upper=0.1, plot_cluster_fit=True)
             plt.savefig(f"./{sample_id}.bafscore.png", dpi='figure', format='png')
-            plot_baf(het_allele_df, sample_id, gmm)
+            plot_baf(het_allele_df, sample_id, None)
             k = gmm.k
             fit_score = gmm.score
             boundary_prob = gmm.prob
