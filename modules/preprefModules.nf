@@ -42,6 +42,31 @@ process getRefData {
 }
 
 
+process indexGp60DB {
+  /**
+  * index the gp60 database
+  */
+
+  memory '5 GB'
+
+  output:
+    path("./gp60_db"), emit: gp60_bt2_db
+
+  script:
+    gp60_db = "${baseDir}/resources/gp60_probes/gp60_db.fa"
+    """
+    bowtie2-build ${gp60_db} gp60_db
+    mkdir ./gp60_db && mv *bt2 ./gp60_db
+    """
+
+  stub:
+    """
+    bowtie2 --version
+    mkdir gp60_db
+    """
+}
+
+
 process indexRefData {
   /**
   * index and preprocess reference fasta files
@@ -61,15 +86,13 @@ process indexRefData {
     """
     samtools faidx ${fasta}
     mkdir ./${genome_id} && cd ./${genome_id}
-    bowtie2-build ../${fasta} ${genome_id} && cd ../
     """
 
   stub:
-    bt2_index = "./${genome_id}"
     reffaidx = "${fasta}.fai"
 
     """
-    mkdir ${bt2_index}
+    samtools --version
     touch ${reffaidx}
     touch ${genome_id}
     """

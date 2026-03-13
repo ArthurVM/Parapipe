@@ -216,15 +216,19 @@ def make_itree(dist_df, run_samples):
             text[i]=text[i]+f" non-run sample"
             colour[i] = 'grey'
 
-    nodes = dict(type='scatter',
-             x=X,
-             y=Y,
-             mode='markers',
-             marker=dict(color=colour, 
-                         size=10),
-             opacity=1.0,
-             text=text,
-             hoverinfo='text')
+    nodes = dict(
+        type='scatter',
+        x=X,
+        y=Y,
+        mode='markers+text',
+        marker=dict(color=colour, size=10, line=dict(color='white', width=1)),
+        opacity=1.0,
+        text=[cl.name if cl else "" for cl in my_tree_clades],
+        textposition="middle right",
+        textfont=dict(size=10),
+        hoverinfo='text',
+        textfont_color="black"
+    )
     
     layout=dict(title='wgSNP tree',
             font=dict(family='Balto',size=14),
@@ -237,7 +241,8 @@ def make_itree(dist_df, run_samples):
                        showgrid=False,
                        ticklen=4,          
                        showticklabels=True,
-                       title='branch length'),
+                       title='branch length',
+                       automargin=True),
             yaxis=dict(visible=False), 
             hovermode='closest',
             plot_bgcolor='rgb(250,250,250)',
@@ -291,19 +296,16 @@ def make_WG_plots(dist_df, prefix, run_samples):
     phylo_plots_wrapper = f"""
     <div class="plots-container">
         <div class="plot-wrapper">
-            {itree_fig.to_html(full_html=False)}
+            {itree_fig.to_html(full_html=False, include_plotlyjs='cdn')}
         </div>
         <div class="plot-wrapper">
-            <img src="data:image/{wgsnp_tree_prefix};base64,{wgsnp_tree_b64}">
+            {hm_fig.to_html(full_html=False, include_plotlyjs=False)}
         </div>
     </div>
 
     <div class="plots-container">
         <div class="plot-wrapper">
-            {pca_fig.to_html(full_html=False)}
-        </div>
-        <div class="plot-wrapper">
-            {hm_fig.to_html(full_html=False)}
+            {pca_fig.to_html(full_html=False, include_plotlyjs=False)}
         </div>
     </div>"""
 

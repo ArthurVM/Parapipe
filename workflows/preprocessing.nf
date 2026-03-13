@@ -8,16 +8,12 @@ include {fastp} from '../modules/preprocessingModules.nf'
 include {fastQC} from '../modules/preprocessingModules.nf'
 include {multiQC} from '../modules/preprocessingModules.nf'
 include {trimGalore} from '../modules/preprocessingModules.nf'
-include {map2Ref} from '../modules/preprocessingModules.nf'
-include {picard} from '../modules/preprocessingModules.nf'
-include {summarise} from '../modules/preprocessingModules.nf'
 
 // define workflow
 workflow preprocessing {
 
     take:
       input_files
-      ref_bt2index
       read_n_threshold
 
     main:
@@ -35,16 +31,7 @@ workflow preprocessing {
       // DEPRECATED: handled by fastp
       // trimGalore(fastp.out.fastp_fqs)
 
-      // map reads to reference sequence to produce BAM
-      map2Ref(fastp.out.fastp_fqs, ref_bt2index)
-
-      // run deduplication and read grouping on BAM
-      picard(map2Ref.out.bam)
-
-      // calculate mapping stats and capture in JSON
-      summarise(picard.out.grouped_bam)
-
     emit:
-      bam_pre = summarise.out.bam_pre_out
+      cleaned_fqs = fastp.out.fastp_fqs
       multiQC_report = multiQC.out.multiQC_report
 }

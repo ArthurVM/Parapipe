@@ -31,6 +31,7 @@ process captureEnv {
     
   stub:
     """
+    python3 -V
     touch env.json
     """
 }

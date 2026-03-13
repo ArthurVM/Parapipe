@@ -1,0 +1,37 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    maintainer="parapipe"
+    about.summary="TrimGalore container"
+
+%post
+    set -eux
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends wget ca-certificates bzip2
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # Install Miniconda (avoids micromamba binary issues)
+    wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+
+    /opt/conda/bin/conda config --system --add channels defaults
+    /opt/conda/bin/conda config --system --add channels bioconda
+    /opt/conda/bin/conda config --system --add channels conda-forge
+
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+    /opt/conda/bin/conda create -y -p /opt/envs/trimgalore -c bioconda -c conda-forge trim-galore=0.6.10 cutadapt=3.7
+    /opt/conda/bin/conda clean -a -y
+
+%environment
+    export PATH="/opt/envs/trimgalore/bin:${PATH}"
+    export LC_ALL=C
+    export LANG=C
+
+%runscript
+    exec trim_galore "$@"

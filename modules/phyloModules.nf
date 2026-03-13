@@ -58,7 +58,7 @@ process moi {
   cpus 2
 
   input:
-    path(vcfs)
+    path vcfs
     tuple path(fasta), path(gff)
     val(missing)
     val(maf)
@@ -74,17 +74,15 @@ process moi {
     scripts = "${baseDir}/bin"
 
     """
-    for v in ./*vcf.gz; do
+    for v in ${vcfs}; do
         bcftools index \$v
     done
 
-    bcftools merge -g ${fasta} -m snps ./*vcf.gz > merged.vcf
+    bcftools merge -g ${fasta} -m snps ${vcfs} > merged.vcf
 
     vcftools --vcf ./merged.vcf --remove-indels --maf ${maf} --max-missing ${missing} --minQ 30 --min-meanDP ${mac} --minDP ${mac} --recode --stdout > filtered_merged.vcf
 
-    Rscript ${scripts}/getFWS.R --vcf=filtered_merged.vcf
-
-    python3 ${scripts}/get_moi.py filtered_merged.vcf fws.csv
+    python3 ${scripts}/get_moi.py filtered_merged.vcf fws.csv ${fasta}
     
     bgzip filtered_merged.vcf
     """
@@ -99,6 +97,60 @@ process moi {
     touch filtered_merged.vcf.gz
     touch test.moi.json
     touch test.png
+    """
+}
+
+
+process gp60BlooMine {
+  /**
+  * gp60 subtype analysis via BlooMine (placeholder run wiring)
+  * Steps:
+  *   - Map reads to the database of gp60 sequences
+  *   - Convert to single fastq
+  *   - Run BlooMine across probe sets (user-supplied)
+  *   - Select best probe set by hits (placeholder)
+  *   - Filter with stutter filter script (user-supplied)
+  */
+
+  errorStrategy "ignore"
+
+  publishDir "${params.output_dir}/gp60", mode: 'copy', overwrite: 'true'
+
+  cpus 2
+  memory '12 GB'
+
+  input:
+    tuple val(sample_name), path(fq1), path(fq2)
+    val(pattern)
+    path(probes)
+    path(gp60_bt2_db)
+
+  output:
+    path("${sample_name}_gp60/${sample_name}"), emit: bm_outdir
+    path("${sample_name}_gp60.bam"), emit: gp60_bam
+    tuple val(sample_name), path("./${sample_name}_gp60/${sample_name}/${sample_name}.polyfamily.filtered.json"), emit: filtered_gp60_report
+
+  script:
+    filtered_json = "${sample_name}.gp60_filtered.json"
+
+    scripts = "${baseDir}/bin"
+    """
+    bowtie2 -x ${gp60_bt2_db}/gp60_db -1 ${fq1} -2 ${fq2} -p ${task.cpus} \
+      | samtools view -@ 8 -u -F 2308 - \
+      | samtools sort -@ 8 -n -T mapped_qname_tmp -o ${sample_name}_gp60.bam - 
+
+    samtools fastq -@ 8 -n -0 /dev/null -s /dev/null ${sample_name}_gp60.bam > ${sample_name}_gp60.fastq
+
+    BlooMine --suffix "_gp60.fastq" -t ${task.cpus} --polyfamily -o ${sample_name}_gp60 ${probes} ./
+
+    python ${scripts}/collect_probe_scores.py ./${sample_name}_gp60/${sample_name}/${sample_name}.polyfamily.json
+    """
+
+  stub:
+    """
+    samtools --version
+    mkdir ${sample_name}_gp60
+    touch ${sample_name}_gp60.polyfamily.filtered.json
     """
 }
 
@@ -204,8 +256,7 @@ process makeJSON {
   memory '5 GB'
 
   input:
-    tuple val(sample_name), path(bam), path(mapstats_json), path(vcf)
-    path(typingreport_json)
+    tuple val(sample_name), path(bam), path(mapstats_json), path(vcf), val(gp60_report)
     path(al_stats_json)
 
   output:
@@ -216,7 +267,7 @@ process makeJSON {
     st_stats_csv = "${sample_name}_ST_stats.csv"
 
     """
-    python3 ${scripts}/make_report_json.py ${sample_name} ${mapstats_json} ${typingreport_json} ${al_stats_json} > ${sample_name}_report.json
+    python3 ${scripts}/make_report_json.py ${sample_name} ${mapstats_json} None ${al_stats_json} ${gp60_report} > ${sample_name}_report.json
     """
 
   stub:

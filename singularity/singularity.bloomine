@@ -1,0 +1,51 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    maintainer="parapipe"
+    about.summary="BlooMine gp60 analysis container (samtools + Python deps; add BlooMine binaries as needed)"
+
+%post
+    set -eux
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends wget ca-certificates bzip2 git cmake libboost-all-dev build-essential
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # Install Miniconda
+    wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+
+    /opt/conda/bin/conda config --system --add channels defaults
+    /opt/conda/bin/conda config --system --add channels bioconda
+    /opt/conda/bin/conda config --system --add channels conda-forge
+
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+    /opt/conda/bin/conda install -y -n base conda-libmamba-solver
+    /opt/conda/bin/conda config --system --set solver libmamba
+
+    # Env for gp60: pin to Python 3.9 so BlooMine's numpy==1.20.3 wheel is available (distutils removed in newer Pythons)
+    # Include setuptools/wheel so pip can build BlooMine without downloading extras
+    /opt/conda/bin/conda create -y -p /opt/envs/bloomine python=3.9 samtools bowtie2 numpy=1.20.3 pandas matplotlib biopython pip setuptools wheel
+    /opt/conda/bin/conda clean -afy
+
+    # Build and install BlooMine inside the conda env so the CLI ends up on PATH
+    cd /opt
+    git clone --depth 1 https://github.com/ArthurVM/BlooMine.git
+    cd /opt/BlooMine
+    /opt/conda/bin/conda run -p /opt/envs/bloomine bash install.sh
+    /opt/conda/bin/conda run -p /opt/envs/bloomine pip install --no-cache-dir --no-build-isolation .
+    cd /
+    rm -rf /opt/BlooMine
+
+%environment
+    export PATH="/opt/envs/bloomine/bin:${PATH}"
+    export LC_ALL=C
+    export LANG=C
+
+%runscript
+    exec /bin/bash "$@"

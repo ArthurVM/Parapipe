@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.decomposition import PCA
 import base64
+import re
 
 
 def content_link(section_name, section_id, chunk_class="nav-l1"):
@@ -243,26 +244,156 @@ def make_stacked_bar(df, fig_height):
     return fig
 
 
+def _natural_sort_key(value: str):
+    """Helper to sort chromosome labels naturally (e.g. 1,2,10)."""
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(value))]
+
+
+def load_chrom_lengths_from_fasta(fasta_path: str) -> dict:
+    """
+    Read a FASTA and return a dict of chromosome -> length.
+    """
+    lengths = {}
+    chrom = None
+    length = 0
+    with open(fasta_path, "r") as fin:
+        for line in fin:
+            if line.startswith(">"):
+                if chrom is not None:
+                    lengths[chrom] = length
+                chrom = line[1:].split()[0]
+                length = 0
+            else:
+                length += len(line.strip())
+    if chrom is not None:
+        lengths[chrom] = length
+    return lengths
+
+
+def plot_maf_across_genome(
+    vcf_obj,
+    sample_id: str,
+    out_path,
+    min_depth: int = 5,
+    chrom_gap: int = 0,
+    max_points: int = 100_000,
+    chrom_lengths: dict | None = None,
+):
+    """
+    Scatter plot of minor allele frequency across the genome for a single sample.
+    - vcf_obj: VCF instance providing allele depths.
+    - sample_id: sample to plot.
+    - out_path: file path to save the PNG.
+    - min_depth: minimum total depth per site to include.
+    - chrom_gap: spacing inserted between concatenated chromosomes (bp); 0 for no gap.
+    - max_points: cap plotted points by downsampling.
+    - chrom_lengths: optional mapping of chromosome -> length to enforce consistent spacing.
+    """
+    counts = vcf_obj.getAlleleCounts(sample_id)
+    if counts.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "No allele counts available", ha="center", va="center")
+        ax.axis("off")
+        fig.savefig(out_path, bbox_inches="tight")
+        plt.close(fig)
+        return out_path
+
+    counts["depth"] = counts["ref_depth"] + counts["alt_depth"]
+    counts = counts[counts["depth"] >= min_depth]
+    if counts.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, f"No sites with depth >= {min_depth}", ha="center", va="center")
+        ax.axis("off")
+        fig.savefig(out_path, bbox_inches="tight")
+        plt.close(fig)
+        return out_path
+
+    counts["maf"] = counts[["ref_freq", "alt_freq"]].min(axis=1)
+    counts = counts.sort_values(["chromosome", "position"])
+
+    if len(counts) > max_points:
+        stride = int(np.ceil(len(counts) / max_points))
+        counts = counts.iloc[::stride]
+
+    if chrom_lengths:
+        chroms = sorted(chrom_lengths.keys(), key=_natural_sort_key)
+        missing = [c for c in counts["chromosome"].unique() if c not in chrom_lengths]
+        if missing:
+            chroms.extend(sorted(missing, key=_natural_sort_key))
+    else:
+        chroms = sorted(counts["chromosome"].unique(), key=_natural_sort_key)
+
+    color_cycle = ["#000000", "#7f7f7f"]
+
+    xs = []
+    ys = []
+    tick_positions = []
+    tick_labels = []
+    offset = 0
+    genome_length = 0
+
+    for chrom_idx, chrom in enumerate(chroms):
+        chrom_df = counts[counts["chromosome"] == chrom]
+        chrom_length = None
+        if chrom_lengths:
+            chrom_length = chrom_lengths.get(chrom)
+
+        if chrom_df.empty:
+            length_for_spacing = chrom_length if chrom_length is not None else 0
+            genome_length = offset + length_for_spacing
+            tick_positions.append(offset + length_for_spacing / 2 if length_for_spacing > 0 else offset)
+            tick_labels.append(chrom)
+            offset += length_for_spacing + chrom_gap
+            continue
+
+        chrom_positions = chrom_df["position"].to_numpy()
+        if chrom_length is None:
+            chrom_length = chrom_positions.max()
+        else:
+            chrom_length = max(chrom_length, chrom_positions.max())
+
+        chrom_positions = chrom_positions + offset
+        xs.append(chrom_positions)
+        ys.append(chrom_df["maf"].to_numpy())
+        tick_positions.append(offset + chrom_length / 2)
+        tick_labels.append(chrom)
+
+        offset += chrom_length + chrom_gap
+        genome_length = offset
+
+    fig, ax = plt.subplots(figsize=(10, 3))
+    for idx, (x_vals, y_vals) in enumerate(zip(xs, ys)):
+        ax.scatter(x_vals, y_vals, s=6, color=color_cycle[idx % len(color_cycle)], alpha=0.8, linewidths=0)
+
+    ax.set_ylim(-0.02, 0.52)
+    ax.set_ylabel("MAF")
+    ax.set_xlabel("Position")
+    if tick_positions:
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=90, fontsize=8)
+    ax.set_title(f"{sample_id}")
+    if genome_length > 0:
+        ax.set_xlim(0, genome_length)
+    ax.margins(x=0)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=200)
+    plt.close(fig)
+    return out_path
+
+
 def make_map_table(json_data):
     plt.style.use('ggplot')
 
-    array_names = ["coverage_breadth_hist", "gg_array"]
-
-    table_list = [["ID", "Mean DOC", "Median DOC", "BOC>=5x", "GG area", "Norm GG area", "Av. Qual", "Av. Insert Size", "Fws", "Het. k", "Bound. Prob", "SNPs: total (unique)"]]
+    table_list = [["ID", "Mean DOC", "Median DOC", "BOC>=5x", "GG area", "Norm GG area", "Av. Qual", "Av. Insert Size", "Fws", "Hs", "MAF plot", "SNPs: total (unique)"]]
 
     for sample, report in json_data.items():
         mapping_stats = report["mapping"]["mapping_stats"]
         al_stats = report["mapping"]["allele_report"]
 
-        ## handle instances where no MOI analysis was carried out due to insufficient SNP heterozygosity
-        if report["heterozygosity"]["k"] == None:
-            het_k = "NA"
-            het_bp = "NA"
-        else:
-            het_k = report["heterozygosity"]["k"]
-            het_bp = np.round(report["heterozygosity"]["boundary_prob"], 3)
-            
-        fws = report["heterozygosity"]["fws"]
+        het = report.get("heterozygosity", {}) or {}
+        fws = het.get("fws")
+        hs = het.get("hs")
+        maf_plot = het.get("maf_plot") or het.get("maf_plot_path") or "NA"
 
         table_list.append([ sample,\
             np.round(mapping_stats["mean_depth_of_coverage"], 1), \
@@ -272,9 +403,9 @@ def make_map_table(json_data):
             np.round(mapping_stats["nGG_area"], 3), \
             np.round(mapping_stats["average_quality"], 1), \
             mapping_stats["insert_size_average"], \
-            np.round(fws, 3), \
-            het_k, \
-            het_bp, \
+            "NA" if fws is None else np.round(fws, 3), \
+            "NA" if hs is None else np.round(hs, 3), \
+            maf_plot, \
             f"{al_stats['total_snps']} ({len(al_stats['unique_snps'])})"])
     
     return table_list
@@ -343,8 +474,8 @@ def make_gg_plot(gg_dict, fig_height):
         coldata = gg_df[col]
         dx=50
         norm_array = [x+1-np.max(coldata) for x in coldata]
-        m_area = np.trapz(np.array(coldata), dx=dx)/np.max(w)
-        m_areaN = np.trapz(norm_array, dx=dx)/np.max(w)
+        m_area = np.trapezoid(np.array(coldata), dx=dx)/np.max(w)
+        m_areaN = np.trapezoid(norm_array, dx=dx)/np.max(w)
         hover_template = f"GG area={np.round(m_area, 3)}\nNormalised GG area={np.round(m_areaN, 3)}"
         traces.append(
             dict(

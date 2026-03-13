@@ -108,8 +108,8 @@ def calc_GG_area(args, stats):
     w = window_array[1]-window_array[0]
     norm_array = [x+1-np.max(gg_array) for x in gg_array]
 
-    m_area = np.trapz(gg_array, dx=w)/np.max(window_array)
-    m_areaN = np.trapz(norm_array, dx=w)/np.max(window_array)
+    m_area = np.trapezoid(gg_array, dx=w)/np.max(window_array)
+    m_areaN = np.trapezoid(norm_array, dx=w)/np.max(window_array)
     # print(f"GG-a={np.round(m_area, 3)}\tnGG-a={np.round(m_areaN, 3)}")
 
     stats["gg_array"] = ggdict

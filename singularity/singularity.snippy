@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    maintainer="parapipe"
+    about.summary="Snippy container"
+
+%environment
+    export PATH="/opt/conda/envs/snippy/bin:${PATH}"
+    export LC_ALL=C
+    export LANG=C
+
+%post
+    set -eux
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        wget ca-certificates bzip2 gzip tar xz-utils \
+        liblzma5 libncursesw5 libtinfo5
+    rm -rf /var/lib/apt/lists/*
+
+    wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+    
+    /opt/conda/bin/conda config --system --add channels defaults
+    /opt/conda/bin/conda config --system --add channels bioconda
+    /opt/conda/bin/conda config --system --add channels conda-forge
+    /opt/conda/bin/conda install -y -n base conda-libmamba-solver
+    /opt/conda/bin/conda config --system --set solver libmamba
+
+    /opt/conda/bin/conda create -y -n snippy snippy=4.6.0
+    /opt/conda/bin/conda clean -afy
+
+%runscript
+    exec snippy "$@"

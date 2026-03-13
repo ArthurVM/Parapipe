@@ -131,7 +131,6 @@ workflow {
     *          PREPROCESSING WORKFLOW START         *
     *************************************************/
     preprocessing(  input_files, \
-                    prepRef.out.ref_bt2index, \
                     read_n_threshold    )
 
 
@@ -139,18 +138,19 @@ workflow {
     /************************************************
     *      PARAPIPE SNP AND MOI WORKFLOW START      *
     *************************************************/
-    phyloMOI(   input_files, \
-                captureEnv.out.env_json, \
+    phyloMOI(   captureEnv.out.env_json, \
                 database, \
-                preprocessing.out.bam_pre, \
+                preprocessing.out.cleaned_fqs, \
                 prepRef.out.refdata, \
+                prepRef.out.gp60_bt2_db, \
                 params.ref, \
                 preprocessing.out.multiQC_report, \
                 yaml, \
                 mincov, \
                 missing, \
                 maf, \
-                mac )
+                mac, \
+                pattern )
 }
 
 workflow.onComplete {

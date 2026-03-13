@@ -245,6 +245,7 @@ process trimGalore {
     trim_fq2 = "${sample_name}_val_2.fq.gz"
 
     """
+    trim_galore --version
     touch ${rep1}
     touch ${rep2}
     touch ${trim_fq1}

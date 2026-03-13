@@ -96,7 +96,7 @@ main <- function() {
   seqVCF2GDS(opt$vcf, gds_file)
   
   gds_handle <- seqOpen(gds_file)
-  fws <- 1-get_Fws(gds_handle)
+  fws <- get_Fws(gds_handle)
   fws_df <- as.data.frame(fws)
   
   write.csv(fws_df, "./fws.csv")
