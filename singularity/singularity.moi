@@ -13,7 +13,6 @@ From: ubuntu:22.04
     apt-get clean
     rm -rf /var/lib/apt/lists/*
 
-    # Install Miniconda
     wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
     bash /tmp/miniconda.sh -b -p /opt/conda
     rm /tmp/miniconda.sh
@@ -27,7 +26,6 @@ From: ubuntu:22.04
     /opt/conda/bin/conda install -y -n base conda-libmamba-solver
     /opt/conda/bin/conda config --system --set solver libmamba
 
-    # Create env with MOI deps: bcftools/vcftools, R + SeqArray, Python stack
     /opt/conda/bin/conda create -y -p /opt/envs/moi \
       bcftools \
       vcftools \

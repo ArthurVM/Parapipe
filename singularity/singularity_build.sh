@@ -1,16 +1,12 @@
 #!/bin/bash
 
-# Build all per-process containers and report success/failure for each.
-
 set -u
 set -o pipefail
 
-# Where to store build logs (can override with LOG_FILE env)
 LOG_FILE="${LOG_FILE:-singularity/build.log}"
 mkdir -p "$(dirname "${LOG_FILE}")"
 echo "=== Singularity build run: $(date) ===" > "${LOG_FILE}"
 
-# Allow overriding the singularity command (e.g., SINGULARITY_CMD="sudo apptainer")
 SINGULARITY_CMD="${SINGULARITY_CMD:-sudo singularity}"
 
 container_list=(
